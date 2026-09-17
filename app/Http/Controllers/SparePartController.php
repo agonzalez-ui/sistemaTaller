@@ -11,7 +11,7 @@ class SparePartController extends Controller
      */
     public function index()
     {
-        //
+        return view('spareparts.index');
     }
 
     /**

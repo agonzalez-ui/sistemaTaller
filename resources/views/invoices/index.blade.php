@@ -1,7 +1,7 @@
 @extends('layouts.auth')
 
 @section('title')
-    Clientes
+    Facturas
 @endsection
 
 @section('auth-contents')

@@ -4,6 +4,9 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\SparePartController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -51,3 +54,15 @@ Route::get('/customers', [CustomerController::class, 'index'])->middleware(['aut
 /* Vehiculo = vehicle */
 Route::get('/vehicles', [VehicleController::class, 'index'])->middleware(['auth', 'verified'])
     ->name('vehicles.index');
+
+/* repuestos = piezas de repuesto */
+Route::get('spareparts', [SparePartController::class, 'index'])->middleware(['auth', 'verified'])
+    ->name('spareparts.index');
+
+/* factura = invoice */
+Route::get('/invoices', [InvoiceController::class, 'index'])->middleware(['auth', 'verified'])
+    ->name('invoice.index');
+
+/* ódenes = order */
+Route::get('/orders', [OrderController::class, 'index'])->middleware('auth', 'verified')
+    ->name('orders.index');
