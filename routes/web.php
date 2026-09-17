@@ -3,11 +3,15 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\InventoryMovementController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SparePartBrandController;
 use App\Http\Controllers\SparePartController;
+use App\Http\Controllers\SystemInformationController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VehicleBrandController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -57,12 +61,20 @@ Route::resource('customers', CustomerController::class)
     ->middleware(['auth', 'verified', 'module:customers']);
 
 /* Vehiculo = vehicle */
-Route::get('/vehicles', [VehicleController::class, 'index'])->middleware(['auth', 'verified', 'module:vehicles'])
-    ->name('vehicles.index');
+Route::resource('vehicles', VehicleController::class)->except('show')
+    ->middleware(['auth', 'verified', 'module:vehicles']);
 
-/* repuestos = piezas de repuesto */
-Route::get('spareparts', [SparePartController::class, 'index'])->middleware(['auth', 'verified', 'module:inventory'])
-    ->name('spareparts.index');
+Route::resource('vehicle-brands', VehicleBrandController::class)->except('show')
+    ->middleware(['auth', 'verified', 'can:manage-security']);
+
+/* repuestos = spareparts */
+Route::resource('spareparts', SparePartController::class)->middleware(['auth', 'verified', 'module:inventory']);
+
+Route::post('spareparts/{sparepart}/movements', [InventoryMovementController::class, 'store'])
+    ->middleware(['auth', 'verified', 'module:inventory,edit'])->name('spareparts.movements.store');
+
+Route::resource('spare-part-brands', SparePartBrandController::class)->except('show')
+    ->middleware(['auth', 'verified', 'can:manage-security']);
 
 /* factura = invoice */
 Route::get('/invoices', [InvoiceController::class, 'index'])->middleware(['auth', 'verified', 'module:billing'])
@@ -72,7 +84,13 @@ Route::get('/invoices', [InvoiceController::class, 'index'])->middleware(['auth'
 Route::get('/orders', [OrderController::class, 'index'])->middleware(['auth', 'verified', 'module:orders'])
     ->name('orders.index');
 
+/* usuarios y roles */
 Route::middleware(['auth', 'verified', 'can:manage-security'])->group(function () {
     Route::resource('users', UserController::class)->except('show');
     Route::resource('roles', RoleController::class)->except('show');
 });
+
+Route::get('/about', [SystemInformationController::class, 'about'])
+    ->middleware(['auth', 'verified', 'module:about'])->name('about');
+Route::get('/help', [SystemInformationController::class, 'help'])
+    ->middleware(['auth', 'verified', 'module:help'])->name('help');

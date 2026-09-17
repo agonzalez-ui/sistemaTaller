@@ -1,0 +1,6 @@
+@php($brand = $brand ?? null)
+<p class="text-sm text-slate-600">Las marcas activas estarán disponibles al registrar una repuesto.</p>
+<div><label for="name" class="block text-sm font-semibold text-slate-700">Nombre de la marca *</label><input name="name" id="name" type="text" required maxlength="80" value="{{ old('name', $brand?->name ?? '') }}" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 py-3" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
+@error('name')<p id="name-error" class="mt-2 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+<div><label for="active" class="block text-sm font-semibold text-slate-700">Estado *</label><select name="active" id="active" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3"><option value="1" @selected((string)old('active',$brand?->active ?? 1) === '1')>Activa</option><option value="0" @selected((string)old('active',$brand?->active ?? 1) === '0')>Inactiva</option></select>@error('active')<p class="mt-2 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+<p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Desactivar impide seleccionar la marca en nuevas repuestos. Las repuestos existentes conservan su marca y pueden seguir editándose.</p>

@@ -71,7 +71,7 @@ class SimrhSeeder extends Seeder
             ['name' => 'Entregado',          'color_class' => 'bg-est-entregado',   'sort_order' => 60, 'is_final' => true,  'allows_invoicing' => true,  'active' => true, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
-        foreach (['Toyota', 'Nissan', 'Hyundai', 'Kia', 'Mitsubishi', 'Honda', 'Suzuki', 'Ford', 'Chevrolet', 'Mazda'] as $m) {
+        foreach (['Honda', 'Suzuki', 'Yamaha', 'Kawasaki', 'Bajaj', 'TVS', 'Hero', 'KTM', 'Ducati', 'BMW', 'Harley-Davidson', 'Triumph', 'Royal Enfield', 'Benelli', 'CFMoto', 'Haojue', 'Vento', 'Freedom', 'Serpento', 'Italika'] as $m) {
             DB::table('vehicle_brands')->insertOrIgnore(['name' => $m, 'active' => true, 'created_at' => $now, 'updated_at' => $now]);
         }
 

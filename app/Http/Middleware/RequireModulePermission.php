@@ -8,9 +8,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RequireModulePermission
 {
-    public function handle(Request $request, Closure $next, string $module): Response
+    public function handle(Request $request, Closure $next, string $module, ?string $permission = null): Response
     {
-        $action = match ($request->route()->getActionMethod()) {
+        $action = $permission ?? match ($request->route()->getActionMethod()) {
             'create', 'store' => 'create',
             'edit', 'update' => 'edit',
             'destroy' => 'delete',

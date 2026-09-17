@@ -10,15 +10,16 @@ class InventoryMovement extends Model
     protected $table = 'inventory_movements';
 
     protected $fillable = [
-        0 => 'spare_part_id',
-        1 => 'type',
-        2 => 'quantity',
-        3 => 'previous_balance',
-        4 => 'new_balance',
-        5 => 'order_id',
-        6 => 'user_id',
-        7 => 'date',
-        8 => 'notes',
+        'spare_part_id',
+        'request_token',
+        'type',
+        'quantity',
+        'previous_balance',
+        'new_balance',
+        'order_id',
+        'user_id',
+        'date',
+        'notes',
     ];
 
     public function sparePart(): BelongsTo

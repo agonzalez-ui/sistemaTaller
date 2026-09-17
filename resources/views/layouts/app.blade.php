@@ -27,7 +27,7 @@
 @endsection
 
 @section('contents')
-    <div class="min-h-[calc(100dvh-88px)] bg-slate-100 font-sans">
+    <div class="flex min-h-[calc(100dvh-88px)] flex-col bg-slate-100 font-sans">
         <nav aria-label="Navegación principal" class="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
             <div class="mx-auto max-w-7xl px-3 py-3 sm:px-6 lg:px-8">
                 @php
@@ -48,26 +48,31 @@
                         $navigation[] = ['Roles', 'roles.index', 'roles.*', 'security'];
                     }
                 @endphp
-                <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-8">
-                    @foreach ($navigation as [$label, $route, $pattern, $icon])
-                        @php($active = request()->routeIs($pattern))
-                        <li class="min-w-0">
-                            <a href="{{ route($route) }}" @if ($active) aria-current="page" @endif
-                               @class([
-                                   'flex min-h-12 items-center justify-center gap-2 rounded-xl px-2 py-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:text-sm',
-                                   'bg-amber-400 text-slate-950 shadow-sm' => $active,
-                                   'text-slate-600 hover:bg-slate-100 active:bg-slate-200' => !$active,
-                               ])>
-                                <x-module-icon :name="$icon" class="h-5 w-5 shrink-0" />
-                                {{ $label }}
-                            </a>
-                        </li>
-                    @endforeach
+                @php
+                    $currentModule = collect($navigation)->first(fn ($item) => request()->routeIs($item[2]));
+                @endphp
+                <details data-mobile-navigation class="group lg:hidden">
+                    <summary class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 [&::-webkit-details-marker]:hidden">
+                        <span class="flex items-center gap-3 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 group-open:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="hidden h-6 w-6 group-open:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                            Menú
+                        </span>
+                        <span class="max-w-40 truncate rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">{{ $currentModule[0] ?? 'Panel del taller' }}</span>
+                    </summary>
+                    <div class="mt-3 max-h-[60dvh] overflow-y-auto border-t border-slate-100 pt-3">
+                        <ul class="grid gap-2 sm:grid-cols-2">
+                            <x-navigation-links :navigation="$navigation" />
+                        </ul>
+                    </div>
+                </details>
+                <ul class="hidden gap-2 lg:grid lg:grid-cols-8">
+                    <x-navigation-links :navigation="$navigation" :desktop="true" />
                 </ul>
             </div>
         </nav>
 
-        <div class="bg-cover bg-center bg-no-repeat px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+        <div class="flex-1 bg-cover bg-center bg-no-repeat px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
              style="background-image: linear-gradient(rgba(241,245,249,.88), rgba(241,245,249,.94)), url('{{ asset('img/fondo-auth.png') }}')">
             <main class="mx-auto w-full @yield('content-width', 'max-w-7xl') rounded-2xl border border-white bg-white p-5 shadow-sm sm:p-7 lg:p-8">
                 @hasSection('page-heading')
@@ -78,5 +83,6 @@
                 @yield('app-contents')
             </main>
         </div>
+        <x-system-footer />
     </div>
 @endsection

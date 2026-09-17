@@ -1,12 +1,24 @@
 @extends('layouts.app')
-
-@section('title')
-    Repuestos de Moto
-@endsection
-
+@section('title', 'Repuestos e inventario')
 @section('app-contents')
-    @if (session('success'))
-        <x-alert :message="session('success')" />
-    @endif
-
+@if(session('success'))<x-alert :message="session('success')" />@endif
+<div class="mt-6">
+<div class="mb-5 flex flex-wrap items-center justify-between gap-3"><p class="text-sm text-slate-600">Controle el catálogo y las existencias del taller.</p><div class="flex flex-wrap gap-3">@can('manage-security')<a href="{{ route('spare-part-brands.index') }}" class="inline-flex min-h-12 items-center rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700">Administrar marcas</a>@endcan @can('module-access',['inventory','create'])<a href="{{ route('spareparts.create') }}" class="inline-flex min-h-12 items-center rounded-xl bg-amber-400 px-5 py-3 font-semibold">+ Nuevo repuesto</a>@endcan</div></div>
+<div class="mb-6 grid gap-3 sm:grid-cols-3">@foreach(['active'=>'Repuestos activos','low'=>'Stock bajo','empty'=>'Sin existencias'] as $key=>$label)<div class="rounded-xl border border-slate-200 bg-slate-50 p-4"><p class="text-sm text-slate-600">{{ $label }}</p><p class="mt-1 text-2xl font-bold {{ $key === 'active' ? 'text-slate-900' : 'text-amber-800' }}">{{ $summary[$key] }}</p></div>@endforeach</div>
+<form action="{{ route('spareparts.index') }}" method="GET" class="mb-6 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+<div class="sm:col-span-2"><label for="search" class="block text-sm font-semibold">Buscar repuesto</label><input type="search" id="search" name="search" maxlength="100" value="{{ request('search') }}" placeholder="Código o nombre" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 py-3"></div>
+<div><label for="status" class="block text-sm font-semibold">Estado</label><select id="status" name="status" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3"><option value="">Todos</option><option value="active" @selected(request('status') === 'active')>Activos</option><option value="inactive" @selected(request('status') === 'inactive')>Inactivos</option></select></div>
+<div><label for="stock" class="block text-sm font-semibold">Existencias</label><select name="stock" id="stock" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3"><option value="">Todas</option><option value="low" @selected(request('stock') === 'low')>Stock bajo / mínimo</option><option value="empty" @selected(request('stock') === 'empty')>Sin existencias</option></select></div>
+<div class="sm:col-span-2"><label for="brand" class="block text-sm font-semibold">Marca</label><select name="brand" id="brand" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3"><option value="">Todas</option>@foreach($brands as $brand)<option value="{{ $brand->id }}" @selected(request('brand') == $brand->id)>{{ $brand->name }}</option>@endforeach</select></div>
+<button type="submit" class="min-h-12 self-end rounded-xl bg-slate-800 px-5 py-3 font-semibold text-white">Buscar</button><a href="{{ route('spareparts.index') }}" class="inline-flex min-h-12 items-center justify-center self-end rounded-xl border border-slate-300 px-5 py-3">Limpiar</a>
+@if($errors->any())<p class="text-sm text-red-700 sm:col-span-2">{{ $errors->first() }}</p>@endif
+</form>
+<p class="mb-4 text-sm text-slate-500">{{ $parts->total() }} repuestos encontrados. Las alertas consideran todos los repuestos activos.</p>
+<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+@forelse($parts as $part)
+<article class="flex min-w-0 flex-col rounded-2xl border border-slate-200 p-5 shadow-sm"><div class="flex flex-wrap justify-between gap-2"><span class="break-all font-mono text-sm font-bold text-slate-600">{{ $part->code }}</span><span class="rounded-full px-3 py-1 text-xs font-semibold {{ $part->active ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600' }}">{{ $part->active ? 'Activo' : 'Inactivo' }}</span></div><h2 class="mt-3 break-words text-lg font-bold text-slate-900">{{ $part->name }}</h2><p class="mt-1 text-sm text-slate-500">{{ $part->brand?->name ?? 'Sin marca' }}</p><p class="mt-4 text-xl font-bold text-slate-900">₡{{ number_format((float)$part->price,2,',','.') }}</p><div class="my-4 rounded-xl p-3 {{ $part->stock_quantity <= $part->minimum_quantity ? 'bg-amber-50 text-amber-900' : 'bg-slate-50 text-slate-700' }}"><p class="font-semibold">{{ $part->stock_quantity }} unidades disponibles</p><p class="mt-1 text-xs">Mínimo: {{ $part->minimum_quantity }} @if($part->stock_quantity === 0) · Sin existencias @elseif($part->stock_quantity <= $part->minimum_quantity) · Requiere reposición @endif</p></div><a href="{{ route('spareparts.show',$part) }}" class="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-800 px-4 py-3 font-semibold text-white">Ver detalle y movimientos →</a></article>
+@empty
+<p class="rounded-xl bg-slate-50 p-8 text-center text-slate-500 md:col-span-2 xl:col-span-3">No hay repuestos que coincidan con la búsqueda.</p>
+@endforelse
+</div><div class="mt-6">{{ $parts->links() }}</div></div>
 @endsection

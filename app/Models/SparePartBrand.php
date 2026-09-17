@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SparePartBrand extends Model
 {
@@ -12,6 +13,11 @@ class SparePartBrand extends Model
         0 => 'name',
         1 => 'active',
     ];
+
+    public function spareParts(): HasMany
+    {
+        return $this->hasMany(SparePart::class, 'spare_part_brand_id');
+    }
 
     protected function casts(): array
     {
