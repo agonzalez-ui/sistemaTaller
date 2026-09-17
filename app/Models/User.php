@@ -46,4 +46,25 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsTo(Role::class);
     }
+
+    public function isAdministrator(): bool
+    {
+        return $this->active && $this->role?->active && $this->role?->is_administrator;
+    }
+
+    public function hasModulePermission(string $slug, string $action = 'view'): bool
+    {
+        if (! $this->active || ! $this->role?->active || ! in_array($action, ['view', 'create', 'edit', 'delete'], true)) {
+            return false;
+        }
+        if ($this->isAdministrator()) {
+            return true;
+        }
+        if (in_array($slug, ['users', 'roles', 'admin_users'], true)) {
+            return false;
+        }
+        $module = $this->role->modules->firstWhere('slug', $slug);
+
+        return $module?->active && $module?->pivot->can_view && $module?->pivot->{'can_'.$action};
+    }
 }

@@ -12,10 +12,10 @@ class SimrhSeeder extends Seeder
         $now = now();
 
         DB::table('roles')->insertOrIgnore([
-            ['id' => 1, 'name' => 'Administrador',  'description' => 'Acceso total al sistema.',                    'active' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 2, 'name' => 'Mecanico',       'description' => 'Opera ordenes de trabajo e inventario.',      'active' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 3, 'name' => 'Recepcionista',  'description' => 'Atiende clientes, vehiculos y facturacion.',  'active' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 4, 'name' => 'Auditoria',      'description' => 'Solo consulta operacion y reportes.',         'active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 1, 'name' => 'Administrador',  'is_administrator' => true, 'description' => 'Acceso total al sistema.',                    'active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'is_administrator' => false, 'name' => 'Mecánico',       'description' => 'Opera ordenes de trabajo e inventario.',      'active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 3, 'is_administrator' => false, 'name' => 'Recepción y ventas',  'description' => 'Gestiona clientes, motos, órdenes y facturas; consulta repuestos.',  'active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 4, 'is_administrator' => false, 'name' => 'Auditoría',      'description' => 'Solo consulta operacion y reportes.',         'active' => true, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         $modules = [
@@ -24,7 +24,7 @@ class SimrhSeeder extends Seeder
             ['admin_users',  'Administracion de usuarios', 'ti ti-user-cog'],
             ['customers',     'Clientes',                'ti ti-address-book'],
             ['vehicles',    'Vehiculos',               'ti ti-car'],
-            ['ordenes',      'Ordenes de trabajo',      'ti ti-clipboard-list'],
+            ['orders',      'Ordenes de trabajo',      'ti ti-clipboard-list'],
             ['inventory',   'Inventario de repuestos', 'ti ti-package'],
             ['billing',  'Facturacion',             'ti ti-receipt'],
             ['reports',     'Reportes',                'ti ti-chart-bar'],
@@ -43,10 +43,10 @@ class SimrhSeeder extends Seeder
         // Matriz de roles del entregable 4.
         // [ver, crear, editar, eliminar] por modulo, para cada rol.
         $matrix = [
-            1 => ['roles' => [1, 1, 1, 1], 'users' => [1, 1, 1, 1], 'admin_users' => [1, 1, 1, 1], 'customers' => [1, 1, 1, 1], 'vehicles' => [1, 1, 1, 1], 'ordenes' => [1, 1, 1, 1], 'inventory' => [1, 1, 1, 1], 'billing' => [1, 1, 1, 1], 'reports' => [1, 0, 0, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
-            2 => ['customers' => [1, 1, 0, 0], 'vehicles' => [1, 1, 1, 0], 'ordenes' => [1, 1, 1, 0], 'inventory' => [1, 0, 1, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
-            3 => ['customers' => [1, 1, 1, 0], 'vehicles' => [1, 1, 1, 0], 'ordenes' => [1, 1, 1, 0], 'billing' => [1, 1, 1, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
-            4 => ['customers' => [1, 0, 0, 0], 'vehicles' => [1, 0, 0, 0], 'ordenes' => [1, 0, 0, 0], 'inventory' => [1, 0, 0, 0], 'billing' => [1, 0, 0, 0], 'reports' => [1, 0, 0, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
+            1 => ['roles' => [1, 1, 1, 1], 'users' => [1, 1, 1, 1], 'admin_users' => [1, 1, 1, 1], 'customers' => [1, 1, 1, 1], 'vehicles' => [1, 1, 1, 1], 'orders' => [1, 1, 1, 1], 'inventory' => [1, 1, 1, 1], 'billing' => [1, 1, 1, 1], 'reports' => [1, 0, 0, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
+            2 => ['customers' => [1, 1, 0, 0], 'vehicles' => [1, 1, 1, 0], 'orders' => [1, 1, 1, 0], 'inventory' => [1, 0, 1, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
+            3 => ['customers' => [1, 1, 1, 0], 'vehicles' => [1, 1, 1, 0], 'orders' => [1, 1, 1, 0], 'billing' => [1, 1, 1, 0], 'inventory' => [1, 0, 0, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
+            4 => ['customers' => [1, 0, 0, 0], 'vehicles' => [1, 0, 0, 0], 'orders' => [1, 0, 0, 0], 'inventory' => [1, 0, 0, 0], 'billing' => [1, 0, 0, 0], 'reports' => [1, 0, 0, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
         ];
 
         $moduleIds = collect($modules)->mapWithKeys(fn ($m, $i) => [$m[0] => $i + 1]);

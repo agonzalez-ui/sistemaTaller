@@ -19,6 +19,9 @@
 
 <body>
 
+    @hasSection('system-header')
+        @yield('system-header')
+    @else
     <header class="bg-[#1E3A5F] py-5">
         <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center lg:justify-between">
             <div class="w-full max-w-100">
@@ -40,6 +43,7 @@
             </nav>
 
     </header>
+    @endif
 
     @yield('contents')
 </body>
