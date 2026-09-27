@@ -22,5 +22,8 @@
         @case('invoices')
             <path d="M5 3h14v18l-2-1.5-2 1.5-3-1.5L9 21l-2-1.5L5 21V3zM9 7h6M9 11h6M9 15h2m3 0h1" />
             @break
+        @case('reports')
+            <path d="M4 20V10m6 10V4m6 16v-7m4 7H2" /><path d="m3 7 6-4 6 6 6-5" />
+            @break
     @endswitch
 </svg>

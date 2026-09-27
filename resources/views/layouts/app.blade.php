@@ -1,7 +1,7 @@
 @extends('layouts.base')
 
 @section('system-header')
-    <header class="bg-[#1E3A5F] font-sans text-white">
+    <header class="bg-[#1E3A5F] font-sans text-white print:hidden">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="{{ route('dashboard') }}" aria-label="SIMRH: ir al inicio" class="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
                 <img src="{{ asset('img/logo.png') }}" alt="SIMRH" class="h-14 w-40 object-contain sm:h-16 sm:w-48">
@@ -37,11 +37,12 @@
                         ['Motos', 'vehicles.index', 'vehicles.*', 'vehicles'],
                         ['Repuestos', 'spareparts.index', 'spareparts.*', 'parts'],
                         ['Órdenes', 'orders.index', 'orders.*', 'orders'],
-                        ['Facturas', 'invoice.index', 'invoice.*', 'invoices'],
+                        ['Facturas', 'invoices.index', 'invoices.*', 'invoices'],
+                        ['Reportes', 'reports.index', 'reports.*', 'reports'],
                     ];
                 @endphp
                 @php
-                    $permissionModules = ['dashboard' => null, 'customers.index' => 'customers', 'vehicles.index' => 'vehicles', 'spareparts.index' => 'inventory', 'orders.index' => 'orders', 'invoice.index' => 'billing'];
+                    $permissionModules = ['dashboard' => null, 'customers.index' => 'customers', 'vehicles.index' => 'vehicles', 'spareparts.index' => 'inventory', 'orders.index' => 'orders', 'invoices.index' => 'billing', 'reports.index' => 'reports'];
                     $navigation = array_filter($navigation, fn ($item) => $item[1] === 'dashboard' || auth()->user()->hasModulePermission($permissionModules[$item[1]]));
                     if (auth()->user()->isAdministrator()) {
                         $navigation[] = ['Usuarios', 'users.index', 'users.*', 'customers'];

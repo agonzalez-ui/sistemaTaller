@@ -26,6 +26,28 @@
             </div>
         </details>
         @endcan
+        @can('module-access', ['reports','view'])
+        <details class="rounded-2xl border border-slate-200 p-4">
+            <summary class="flex min-h-12 cursor-pointer items-center text-lg font-bold text-slate-900">Reportes y bitácoras</summary>
+            <div class="mt-3 space-y-3 text-sm leading-relaxed text-slate-600">
+                <p>El centro de reportes contiene facturación, órdenes, inventario, ingresos y salidas, y movimientos de usuarios.</p>
+                <p>Seleccione los filtros y presione Aplicar filtros. Cada reporte muestra sus totales y puede imprimirse con el resultado actual.</p>
+                <p>Las bitácoras de seguridad permiten investigar sesiones y cambios por rango de fechas, usuario y tipo de movimiento.</p>
+                <a href="{{ route('reports.index') }}" class="inline-flex min-h-12 items-center font-semibold text-amber-700">Abrir reportes →</a>
+            </div>
+        </details>
+        @endcan
+        @can('module-access', ['billing','view'])
+        <details class="rounded-2xl border border-slate-200 p-4">
+            <summary class="flex min-h-12 cursor-pointer items-center text-lg font-bold text-slate-900">Facturas</summary>
+            <div class="mt-3 space-y-3 text-sm leading-relaxed text-slate-600">
+                <p>Una orden en estado Lista o Entregada puede convertirse en factura una sola vez. Use Generar factura desde el detalle de la orden o seleccione Nueva factura.</p>
+                <p>El sistema copia los repuestos, la mano de obra y sus precios. Indique el descuento y el porcentaje de impuesto; los totales se calculan en el servidor.</p>
+                <p>Después de emitirla, puede consultarla e imprimirla. Una factura anulada se conserva con su motivo y fecha para mantener la auditoría.</p>
+                <a href="{{ route('invoices.index') }}" class="inline-flex min-h-12 items-center font-semibold text-amber-700">Abrir facturas →</a>
+            </div>
+        </details>
+        @endcan
         @can('module-access', ['vehicles','view'])
         <details class="rounded-2xl border border-slate-200 p-4">
             <summary class="flex min-h-12 cursor-pointer items-center text-lg font-bold text-slate-900">Motos y propietarios</summary>
@@ -66,13 +88,26 @@
             </div>
         </details>
         @endcan
+        @can('module-access', ['orders','view'])
+        <details class="rounded-2xl border border-slate-200 p-4">
+            <summary class="flex min-h-12 cursor-pointer items-center text-lg font-bold text-slate-900">Órdenes de trabajo</summary>
+            <div class="mt-3 space-y-3 text-sm leading-relaxed text-slate-600">
+                <p>Seleccione Nueva orden, el cliente y una de sus motos. Asigne el mecánico, describa el trabajo solicitado y registre el costo de mano de obra.</p>
+                <p>Desde el detalle puede agregar repuestos. El sistema descuenta las existencias y conserva el precio utilizado en la orden. Al reducir o retirar una línea, devuelve la diferencia al inventario.</p>
+                <p>Al cambiar el estado, indique el detalle para conservarlo en el historial. Una orden entregada queda protegida contra modificaciones.</p>
+                <p>Cancelar una orden devuelve sus repuestos y conserva toda la información para consulta.</p>
+                <a href="{{ route('orders.index') }}" class="inline-flex min-h-12 items-center font-semibold text-amber-700">Abrir órdenes →</a>
+            </div>
+        </details>
+        @endcan
         <details class="rounded-2xl border border-slate-200 p-4">
             <summary class="flex min-h-12 cursor-pointer items-center text-lg font-bold text-slate-900">Mensajes y consultas frecuentes</summary>
             <div class="mt-3 space-y-3 text-sm leading-relaxed text-slate-600">
                 <p><strong>No se guarda el formulario:</strong> revise los avisos de validación y complete los campos obligatorios antes de guardar otra vez.</p>
                 <p><strong>No aparece una marca:</strong> el administrador debe registrarla o reactivarla en el catálogo correspondiente.</p>
                 <p><strong>No puedo registrar una salida:</strong> revise el stock y confirme que el repuesto esté activo.</p>
-                <p><strong>Órdenes y facturas:</strong> estos módulos siguen en desarrollo. La vinculación automática con el inventario estará disponible en una próxima etapa.</p>
+                <p><strong>Órdenes:</strong> registre el cliente y la moto, asigne un mecánico y agregue repuestos desde el detalle. El sistema descuenta existencias, conserva precios e historial y devuelve los repuestos al reducirlos, retirarlos o cancelar.</p>
+                <p><strong>Facturas:</strong> la orden debe estar Lista o Entregada y no tener otra factura. Los precios quedan guardados tal como fueron emitidos.</p>
             </div>
         </details>
     </div>

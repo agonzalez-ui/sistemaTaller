@@ -2,64 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SaveOrderItemRequest;
+use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\OrderService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class OrderItemController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function store(SaveOrderItemRequest $request, Order $order, OrderService $service): RedirectResponse
     {
-        //
+        $service->saveItem($request, $order, $request->validated());
+
+        return redirect()->route('orders.show', $order)->with('success', 'Repuesto agregado y existencia descontada.');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function update(SaveOrderItemRequest $request, Order $order, OrderItem $orderItem, OrderService $service): RedirectResponse
     {
-        //
+        $service->saveItem($request, $order, $request->validated(), $orderItem);
+
+        return redirect()->route('orders.show', $order)->with('success', 'Cantidad actualizada correctamente.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function destroy(Request $request, Order $order, OrderItem $orderItem, OrderService $service): RedirectResponse
     {
-        //
-    }
+        $service->removeItem($request, $order, $orderItem);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(OrderItem $orderItem)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(OrderItem $orderItem)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, OrderItem $orderItem)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(OrderItem $orderItem)
-    {
-        //
+        return redirect()->route('orders.show', $order)->with('success', 'Repuesto retirado y existencia devuelta.');
     }
 }

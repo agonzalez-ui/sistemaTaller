@@ -10,11 +10,11 @@ class OrderHistory extends Model
     protected $table = 'order_histories';
 
     protected $fillable = [
-        0 => 'order_id',
-        1 => 'order_status_id',
-        2 => 'user_id',
-        3 => 'date',
-        4 => 'notes',
+        'order_id',
+        'order_status_id',
+        'user_id',
+        'date',
+        'notes',
     ];
 
     public function order(): BelongsTo

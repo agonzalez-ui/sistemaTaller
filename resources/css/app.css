@@ -7,3 +7,14 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@media print {
+    @page { margin: 12mm; }
+    nav, body > footer, .print\:hidden { display: none !important; }
+    body, main, .invoice-sheet { background: white !important; box-shadow: none !important; border: 0 !important; }
+    main { max-width: none !important; padding: 0 !important; }
+    .report-sheet { border: 0 !important; box-shadow: none !important; }
+    .report-sheet table { min-width: 0 !important; font-size: 8pt !important; }
+    .report-sheet th, .report-sheet td { padding: 5px !important; }
+    .report-sheet tr { break-inside: avoid; }
+}

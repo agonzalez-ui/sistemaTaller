@@ -6,6 +6,8 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InventoryMovementController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderItemController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SparePartBrandController;
 use App\Http\Controllers\SparePartController;
@@ -76,13 +78,28 @@ Route::post('spareparts/{sparepart}/movements', [InventoryMovementController::cl
 Route::resource('spare-part-brands', SparePartBrandController::class)->except('show')
     ->middleware(['auth', 'verified', 'can:manage-security']);
 
-/* factura = invoice */
-Route::get('/invoices', [InvoiceController::class, 'index'])->middleware(['auth', 'verified', 'module:billing'])
-    ->name('invoice.index');
+/* facturas */
+Route::resource('invoices', InvoiceController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
+    ->middleware(['auth', 'verified', 'module:billing']);
 
-/* ódenes = order */
-Route::get('/orders', [OrderController::class, 'index'])->middleware(['auth', 'verified', 'module:orders'])
-    ->name('orders.index');
+/* reportes operativos y bitácoras */
+Route::middleware(['auth', 'verified', 'module:reports'])->prefix('reports')->name('reports.')->group(function () {
+    Route::get('/', [ReportController::class, 'index'])->name('index');
+    Route::get('/billing', [ReportController::class, 'billing'])->name('billing');
+    Route::get('/orders', [ReportController::class, 'orders'])->name('orders');
+    Route::get('/inventory', [ReportController::class, 'inventory'])->name('inventory');
+    Route::get('/access-logs', [ReportController::class, 'accessLogs'])->name('access');
+    Route::get('/activity-logs', [ReportController::class, 'activityLogs'])->name('activity');
+});
+
+/* órdenes de trabajo */
+Route::resource('orders', OrderController::class)->middleware(['auth', 'verified', 'module:orders']);
+Route::post('orders/{order}/items', [OrderItemController::class, 'store'])
+    ->middleware(['auth', 'verified', 'module:orders,edit'])->name('orders.items.store');
+Route::put('orders/{order}/items/{orderItem}', [OrderItemController::class, 'update'])
+    ->middleware(['auth', 'verified', 'module:orders,edit'])->name('orders.items.update');
+Route::delete('orders/{order}/items/{orderItem}', [OrderItemController::class, 'destroy'])
+    ->middleware(['auth', 'verified', 'module:orders,edit'])->name('orders.items.destroy');
 
 /* usuarios y roles */
 Route::middleware(['auth', 'verified', 'can:manage-security'])->group(function () {

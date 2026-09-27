@@ -47,11 +47,11 @@
                     ['Clientes', 'customers.index', 'customers', 'Información de contacto y motos de sus clientes.'],
                     ['Motos', 'vehicles.index', 'vehicles', 'Consulte las motos registradas en el taller.'],
                     ['Repuestos', 'spareparts.index', 'parts', 'Catálogo de piezas y disponibilidad de inventario.'],
-                    ['Facturas', 'invoice.index', 'invoices', 'Consulte los comprobantes de los trabajos realizados.'],
+                    ['Facturas', 'invoices.index', 'invoices', 'Consulte los comprobantes de los trabajos realizados.'],
                 ];
             @endphp
             @foreach ($modules as [$label, $route, $icon, $description])
-                @php($modulePermission = ['customers.index' => 'customers', 'vehicles.index' => 'vehicles', 'spareparts.index' => 'inventory', 'invoice.index' => 'billing'][$route])
+                @php($modulePermission = ['customers.index' => 'customers', 'vehicles.index' => 'vehicles', 'spareparts.index' => 'inventory', 'invoices.index' => 'billing'][$route])
                 @can('module-access', [$modulePermission, 'view'])
                 <a href="{{ route($route) }}" class="group flex min-h-44 flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-amber-400 hover:bg-amber-50/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:p-6">
                     <div class="flex items-center justify-between gap-3">
@@ -72,6 +72,14 @@
                 <a href="{{ route('users.index') }}" class="flex min-h-16 items-center gap-4 rounded-xl bg-slate-50 p-4 font-semibold text-slate-800 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"><x-module-icon name="customers" /> Usuarios <span class="ml-auto" aria-hidden="true">→</span></a>
                 <a href="{{ route('roles.index') }}" class="flex min-h-16 items-center gap-4 rounded-xl bg-slate-50 p-4 font-semibold text-slate-800 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"><x-module-icon name="security" /> Roles y permisos <span class="ml-auto" aria-hidden="true">→</span></a>
             </div>
+        </div>
+    @endcan
+    @can('module-access', ['reports', 'view'])
+        <div class="mt-7 border-t border-slate-200 pt-6">
+            <a href="{{ route('reports.index') }}" class="flex min-h-20 items-center gap-4 rounded-2xl bg-slate-900 p-5 font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400 text-slate-950"><x-module-icon name="reports" /></span>
+                <span><span class="block text-lg font-bold">Centro de reportes</span><span class="mt-1 block text-sm font-normal text-slate-300">Reportes operativos y bitácoras de seguridad con filtros.</span></span><span class="ml-auto text-xl" aria-hidden="true">→</span>
+            </a>
         </div>
     @endcan
 @endsection

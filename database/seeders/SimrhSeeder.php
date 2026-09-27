@@ -64,11 +64,12 @@ class SimrhSeeder extends Seeder
 
         DB::table('order_statuses')->insertOrIgnore([
             ['name' => 'Recibido',           'color_class' => 'bg-est-recibido',    'sort_order' => 10, 'is_final' => false, 'allows_invoicing' => false, 'active' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'En diagnostico',     'color_class' => 'bg-est-diagnostico', 'sort_order' => 20, 'is_final' => false, 'allows_invoicing' => false, 'active' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'En reparacion',      'color_class' => 'bg-est-reparacion',  'sort_order' => 30, 'is_final' => false, 'allows_invoicing' => false, 'active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'En diagnóstico',     'color_class' => 'bg-est-diagnostico', 'sort_order' => 20, 'is_final' => false, 'allows_invoicing' => false, 'active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'En reparación',      'color_class' => 'bg-est-reparacion',  'sort_order' => 30, 'is_final' => false, 'allows_invoicing' => false, 'active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'Esperando repuesto', 'color_class' => 'bg-est-espera',      'sort_order' => 40, 'is_final' => false, 'allows_invoicing' => false, 'active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'Listo',              'color_class' => 'bg-est-listo',       'sort_order' => 50, 'is_final' => false, 'allows_invoicing' => true,  'active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'Entregado',          'color_class' => 'bg-est-entregado',   'sort_order' => 60, 'is_final' => true,  'allows_invoicing' => true,  'active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Cancelada',           'color_class' => 'bg-red-100 text-red-800', 'sort_order' => 70, 'is_final' => true, 'allows_invoicing' => false, 'active' => true, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         foreach (['Honda', 'Suzuki', 'Yamaha', 'Kawasaki', 'Bajaj', 'TVS', 'Hero', 'KTM', 'Ducati', 'BMW', 'Harley-Davidson', 'Triumph', 'Royal Enfield', 'Benelli', 'CFMoto', 'Haojue', 'Vento', 'Freedom', 'Serpento', 'Italika'] as $m) {

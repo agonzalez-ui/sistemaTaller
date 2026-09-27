@@ -11,17 +11,17 @@ class Order extends Model
     protected $table = 'orders';
 
     protected $fillable = [
-        0 => 'number',
-        1 => 'customer_id',
-        2 => 'vehicle_id',
-        3 => 'order_status_id',
-        4 => 'mechanic_id',
-        5 => 'description',
-        6 => 'diagnosis',
-        7 => 'labor_cost',
-        8 => 'received_at',
-        9 => 'delivered_at',
-        10 => 'created_by',
+        'number',
+        'customer_id',
+        'vehicle_id',
+        'order_status_id',
+        'mechanic_id',
+        'description',
+        'diagnosis',
+        'labor_cost',
+        'received_at',
+        'delivered_at',
+        'created_by',
     ];
 
     public function customer(): BelongsTo

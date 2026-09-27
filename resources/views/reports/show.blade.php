@@ -1,0 +1,55 @@
+@extends('layouts.app')
+@section('title', $title)
+@section('content-width', 'max-w-[1500px]')
+@section('app-contents')
+<div class="mt-6 space-y-6">
+    <div class="flex flex-wrap items-start justify-between gap-4 print:hidden"><div><a href="{{ route('reports.index') }}" class="inline-flex min-h-12 items-center text-slate-700">← Centro de reportes</a><p class="mt-1 text-sm text-slate-500">{{ $description }}</p></div><button type="button" onclick="window.print()" class="min-h-12 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white">Imprimir reporte</button></div>
+
+    <form method="GET" class="grid gap-3 rounded-2xl bg-slate-50 p-4 print:hidden sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end">
+        @if($type !== 'inventory')
+            <div class="lg:w-44"><label for="from" class="block text-sm font-semibold">Desde</label><input id="from" name="from" type="date" value="{{ request('from') }}" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-3"></div>
+            <div class="lg:w-44"><label for="to" class="block text-sm font-semibold">Hasta</label><input id="to" name="to" type="date" value="{{ request('to') }}" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-3"></div>
+        @endif
+        @if($type === 'billing')
+            <div class="lg:w-48"><label for="status" class="block text-sm font-semibold">Estado</label><select id="status" name="status" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todos</option><option value="ISSUED" @selected(request('status')==='ISSUED')>Emitida</option><option value="CANCELLED" @selected(request('status')==='CANCELLED')>Anulada</option></select></div>
+            <div class="min-w-56 flex-1"><label for="customer" class="block text-sm font-semibold">Cliente</label><select id="customer" name="customer" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todos</option>@foreach($catalogs['customers'] as $item)<option value="{{ $item->id }}" @selected(request('customer')==$item->id)>{{ $item->name }}</option>@endforeach</select></div>
+        @elseif($type === 'orders')
+            <div class="lg:w-48"><label for="status" class="block text-sm font-semibold">Estado</label><select id="status" name="status" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todos</option>@foreach($catalogs['statuses'] as $item)<option value="{{ $item->id }}" @selected(request('status')==$item->id)>{{ $item->name }}</option>@endforeach</select></div>
+            <div class="min-w-56 flex-1"><label for="mechanic" class="block text-sm font-semibold">Mecánico</label><select id="mechanic" name="mechanic" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todos</option>@foreach($catalogs['mechanics'] as $item)<option value="{{ $item->id }}" @selected(request('mechanic')==$item->id)>{{ $item->name }}</option>@endforeach</select></div>
+        @elseif($type === 'inventory')
+            <div class="min-w-56 flex-1"><label for="brand" class="block text-sm font-semibold">Marca</label><select id="brand" name="brand" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todas</option>@foreach($catalogs['brands'] as $item)<option value="{{ $item->id }}" @selected(request('brand')==$item->id)>{{ $item->name }}</option>@endforeach</select></div>
+            <div class="lg:w-44"><label for="state" class="block text-sm font-semibold">Estado</label><select id="state" name="state" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todos</option><option value="active" @selected(request('state')==='active')>Activo</option><option value="inactive" @selected(request('state')==='inactive')>Inactivo</option></select></div>
+            <div class="lg:w-48"><label for="stock" class="block text-sm font-semibold">Existencias</label><select id="stock" name="stock" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todas</option><option value="low" @selected(request('stock')==='low')>Stock bajo</option><option value="available" @selected(request('stock')==='available')>Disponibles</option><option value="out" @selected(request('stock')==='out')>Agotados</option></select></div>
+        @elseif(in_array($type, ['access','activity']))
+            <div class="min-w-56 flex-1"><label for="user" class="block text-sm font-semibold">Usuario</label><select id="user" name="user" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todos</option>@foreach($catalogs['users'] as $item)<option value="{{ $item->id }}" @selected(request('user')==$item->id)>{{ $item->name }}</option>@endforeach</select></div>
+            @if($type === 'activity')<div class="lg:w-48"><label for="action" class="block text-sm font-semibold">Movimiento</label><select id="action" name="action" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todos</option>@foreach($catalogs['actions'] as $item)<option value="{{ $item }}" @selected(request('action')===$item)>{{ $item }}</option>@endforeach</select></div>@endif
+        @endif
+        <button class="min-h-12 rounded-xl bg-amber-400 px-5 py-3 font-bold">Aplicar filtros</button><a href="{{ url()->current() }}" class="inline-flex min-h-12 items-center px-3 font-semibold text-slate-600">Limpiar</a>
+    </form>
+
+    <article class="report-sheet overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <header class="flex flex-col justify-between gap-5 bg-slate-900 p-5 text-white sm:flex-row sm:items-start sm:p-7"><div><p class="text-xs font-bold uppercase tracking-[.2em] text-amber-300">SIMRH · Reporte</p><h2 class="mt-2 text-2xl font-bold">{{ $title }}</h2><p class="mt-2 text-sm text-slate-300">{{ $description }}</p></div><div class="text-sm sm:text-right"><p>Generado: {{ now()->format('d/m/Y H:i') }}</p><p class="mt-1 text-slate-300">Por: {{ auth()->user()->name }}</p>@if(request('from') || request('to'))<p class="mt-1 text-slate-300">Periodo: {{ request('from','Inicio') }} a {{ request('to','Hoy') }}</p>@endif</div></header>
+        <div class="grid gap-px bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">@foreach($totals as $label=>$value)<div class="bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ $label }}</p><p class="mt-1 text-xl font-bold text-slate-900">{{ $value }}</p></div>@endforeach</div>
+        <div class="overflow-x-auto p-4 sm:p-6">
+            <table class="w-full min-w-[850px] border-collapse text-left text-sm"><thead class="bg-slate-100 text-slate-600"><tr>
+                @if($type==='billing')<th class="p-3">Factura</th><th class="p-3">Fecha</th><th class="p-3">Cliente</th><th class="p-3">Orden</th><th class="p-3">Estado</th><th class="p-3 text-right">Total</th>
+                @elseif($type==='orders')<th class="p-3">Orden</th><th class="p-3">Recepción</th><th class="p-3">Cliente / moto</th><th class="p-3">Mecánico</th><th class="p-3">Estado</th><th class="p-3 text-right">Valor</th>
+                @elseif($type==='inventory')<th class="p-3">Código</th><th class="p-3">Repuesto</th><th class="p-3">Marca</th><th class="p-3 text-right">Stock</th><th class="p-3 text-right">Mínimo</th><th class="p-3 text-right">Precio</th><th class="p-3 text-right">Valor</th><th class="p-3">Estado</th>
+                @elseif($type==='access')<th class="p-3">Código</th><th class="p-3">Usuario</th><th class="p-3">Ingreso</th><th class="p-3">Salida</th><th class="p-3">Tipo de salida</th><th class="p-3">Dirección IP</th>
+                @else<th class="p-3">Código</th><th class="p-3">Usuario</th><th class="p-3">Fecha y hora</th><th class="p-3">Movimiento</th><th class="p-3">Tabla / registro</th><th class="p-3">Detalle</th>
+                @endif
+            </tr></thead><tbody>
+                @forelse($rows as $row)<tr class="border-b border-slate-100 align-top">
+                    @if($type==='billing')<td class="p-3 font-mono font-semibold">{{ $row->number }}</td><td class="p-3">{{ $row->date->format('d/m/Y H:i') }}</td><td class="p-3">{{ $row->customer->name }}</td><td class="p-3">{{ $row->order->number }}</td><td class="p-3">{{ $row->status==='ISSUED'?'Emitida':'Anulada' }}</td><td class="p-3 text-right font-semibold">₡{{ number_format((float)$row->total,2,',','.') }}</td>
+                    @elseif($type==='orders')<td class="p-3 font-mono font-semibold">{{ $row->number }}</td><td class="p-3">{{ $row->received_at->format('d/m/Y H:i') }}</td><td class="p-3"><span class="font-semibold">{{ $row->customer->name }}</span><span class="block text-xs text-slate-500">{{ $row->vehicle->license_plate }}</span></td><td class="p-3">{{ $row->mechanic?->name ?? 'Sin asignar' }}</td><td class="p-3">{{ $row->status->name }}</td><td class="p-3 text-right font-semibold">₡{{ number_format((float)$row->labor_cost+(float)$row->items_sum_line_total,2,',','.') }}</td>
+                    @elseif($type==='inventory')<td class="p-3 font-mono font-semibold">{{ $row->code }}</td><td class="p-3">{{ $row->name }}</td><td class="p-3">{{ $row->brand?->name ?? 'Sin marca' }}</td><td class="p-3 text-right font-semibold">{{ $row->stock_quantity }}</td><td class="p-3 text-right">{{ $row->minimum_quantity }}</td><td class="p-3 text-right">₡{{ number_format((float)$row->price,2,',','.') }}</td><td class="p-3 text-right font-semibold">₡{{ number_format($row->stock_quantity*(float)$row->price,2,',','.') }}</td><td class="p-3">{{ $row->active?'Activo':'Inactivo' }}</td>
+                    @elseif($type==='access')<td class="p-3">{{ $row->id }}</td><td class="p-3 font-semibold">{{ $row->user->name }}</td><td class="p-3">{{ $row->logged_in_at->format('d/m/Y H:i:s') }}</td><td class="p-3">{{ $row->logged_out_at?->format('d/m/Y H:i:s') ?? 'Sesión abierta' }}</td><td class="p-3">{{ $row->logout_type ?? '—' }}</td><td class="p-3 font-mono">{{ $row->ip_address ?? '—' }}</td>
+                    @else<td class="p-3">{{ $row->id }}</td><td class="p-3 font-semibold">{{ $row->user->name }}</td><td class="p-3">{{ $row->occurred_at->format('d/m/Y H:i:s') }}</td><td class="p-3">{{ $row->action }}</td><td class="p-3">{{ $row->table_name }}{{ $row->record_id ? ' #'.$row->record_id : '' }}</td><td class="max-w-md p-3">{{ $row->details }}</td>
+                    @endif
+                </tr>@empty<tr><td colspan="8" class="p-8 text-center text-slate-500">No hay registros para los filtros seleccionados.</td></tr>@endforelse
+            </tbody><tfoot><tr class="bg-amber-50 font-bold"><td colspan="8" class="p-3">Total de registros: {{ $rows->count() }}</td></tr></tfoot></table>
+        </div>
+        <footer class="flex flex-wrap justify-between gap-3 border-t border-slate-200 p-4 text-xs text-slate-500 sm:px-6"><span>SIMRH · Sistema de Información para el Manejo de Reparaciones y Herramientas</span><span>Fin del reporte · {{ now()->format('d/m/Y') }}</span></footer>
+    </article>
+</div>
+@endsection

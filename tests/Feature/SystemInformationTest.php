@@ -33,11 +33,11 @@ test('system information requires authentication verification and the correspond
     $this->get(route('help'))->assertSuccessful();
     $this->get(route('dashboard'))->assertDontSee(route('about'))->assertSee(route('help'));
 });
-test('help filters administrator instructions and does not claim unfinished features are available', function () {
+test('help filters administrator instructions and documents completed features', function () {
     $user = User::factory()->create();
     $user->forceFill(['role_id' => 2])->save();
     $this->actingAs($user);
-    $this->get(route('help'))->assertSuccessful()->assertDontSee('Marcas, usuarios y permisos')->assertSee('siguen en desarrollo');
+    $this->get(route('help'))->assertSuccessful()->assertDontSee('Marcas, usuarios y permisos')->assertDontSee('este módulo sigue en desarrollo');
     $user->forceFill(['role_id' => 1])->save();
     $this->get(route('help'))->assertSee('Marcas, usuarios y permisos');
 });
