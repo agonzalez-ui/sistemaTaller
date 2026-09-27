@@ -1,4 +1,4 @@
-<footer class="border-t border-slate-200 bg-white text-slate-600 print:hidden">
+<footer class="border-t border-slate-300 bg-[#DCE3EA] text-slate-600 print:hidden">
     <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-center sm:flex-row sm:px-6 sm:text-left lg:px-8">
         <div>
             <p class="text-sm font-semibold text-slate-800">{{ config('simrh.acronym') }} <span class="font-normal text-slate-500">· Gestión del taller</span></p>
