@@ -46,3 +46,17 @@ test('rejects duplicate identification and invalid numbers without changing the 
         ->assertSessionHasErrors(['identification_number', 'phone']);
     expect($customer->fresh()->name)->toBe('Original');
 });
+
+test('searches customers by name identification phone email and status while preserving pagination filters', function () {
+    $user = User::factory()->create();
+    $user->forceFill(['role_id' => 1])->save();
+    $target = Customer::create(['name' => 'Marcela Buscada', 'identification_number' => '116380560', 'email' => 'marcela@example.com', 'active' => true, 'created_by' => $user->id]);
+    $target->phones()->create(['phone' => '85649860']);
+    Customer::create(['name' => 'Cliente Diferente', 'identification_number' => '116380561', 'active' => false, 'created_by' => $user->id]);
+    $this->actingAs($user);
+
+    foreach (['Marcela', '116380560', '85649860', 'marcela@example.com'] as $search) {
+        $this->get(route('customers.index', ['search' => $search]))->assertSuccessful()->assertSee('Marcela Buscada')->assertDontSee('Cliente Diferente');
+    }
+    $this->get(route('customers.index', ['status' => 'inactive']))->assertSee('Cliente Diferente')->assertDontSee('Marcela Buscada');
+});

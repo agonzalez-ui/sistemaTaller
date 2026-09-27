@@ -69,3 +69,18 @@ test('allows administrator and auditor reports while denying operational roles',
     $this->get(route('reports.index'))->assertForbidden();
     $this->get(route('reports.billing'))->assertForbidden();
 });
+
+test('paginates large reports and exports a branded excel workbook', function () {
+    foreach (range(1, 55) as $position) {
+        ActivityLog::create(['user_id' => $this->admin->id, 'occurred_at' => now()->addSeconds($position), 'action' => 'UPDATE', 'table_name' => 'customers', 'record_id' => 'P-'.$position, 'details' => 'Registro de paginación '.$position]);
+    }
+    $this->get(route('reports.activity'))->assertSuccessful()->assertViewHas('rows', fn ($rows) => $rows->count() === 50 && $rows->total() === 56)->assertSee('Total filtrado: 56');
+
+    $response = $this->get(route('reports.excel', ['type' => 'billing', 'status' => 'ISSUED']))->assertSuccessful()->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    $path = $response->baseResponse->getFile()->getPathname();
+    $zip = new ZipArchive;
+    expect($zip->open($path))->toBeTrue();
+    $names = collect(range(0, $zip->numFiles - 1))->map(fn ($index) => $zip->getNameIndex($index));
+    expect($names->contains(fn ($name) => str_starts_with($name, 'xl/media/')))->toBeTrue();
+    $zip->close();
+});

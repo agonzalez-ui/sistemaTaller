@@ -3,7 +3,8 @@
 @section('content-width', 'max-w-[1500px]')
 @section('app-contents')
 <div class="mt-6 space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-4 print:hidden"><div><a href="{{ route('reports.index') }}" class="inline-flex min-h-12 items-center text-slate-700">← Centro de reportes</a><p class="mt-1 text-sm text-slate-500">{{ $description }}</p></div><button type="button" onclick="window.print()" class="min-h-12 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white">Imprimir reporte</button></div>
+    <div class="flex flex-wrap items-start justify-between gap-4 print:hidden"><div><a href="{{ route('reports.index') }}" class="inline-flex min-h-12 items-center text-slate-700">← Centro de reportes</a><p class="mt-1 text-sm text-slate-500">{{ $description }}</p></div><div class="flex flex-wrap gap-2"><a href="{{ route('reports.excel', ['type' => $type] + request()->query()) }}" class="inline-flex min-h-12 items-center rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white">Descargar Excel</a><button type="button" onclick="window.print()" class="min-h-12 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white">Imprimir página</button></div></div>
+    @if($errors->any())<div role="alert" class="rounded-xl bg-red-50 p-4 text-red-800 print:hidden">{{ $errors->first() }}</div>@endif
 
     <form method="GET" class="grid gap-3 rounded-2xl bg-slate-50 p-4 print:hidden sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end">
         @if($type !== 'inventory')
@@ -28,7 +29,7 @@
     </form>
 
     <article class="report-sheet overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <header class="flex flex-col justify-between gap-5 bg-slate-900 p-5 text-white sm:flex-row sm:items-start sm:p-7"><div><p class="text-xs font-bold uppercase tracking-[.2em] text-amber-300">SIMRH · Reporte</p><h2 class="mt-2 text-2xl font-bold">{{ $title }}</h2><p class="mt-2 text-sm text-slate-300">{{ $description }}</p></div><div class="text-sm sm:text-right"><p>Generado: {{ now()->format('d/m/Y H:i') }}</p><p class="mt-1 text-slate-300">Por: {{ auth()->user()->name }}</p>@if(request('from') || request('to'))<p class="mt-1 text-slate-300">Periodo: {{ request('from','Inicio') }} a {{ request('to','Hoy') }}</p>@endif</div></header>
+        <header class="flex flex-col justify-between gap-5 bg-slate-900 p-5 text-white sm:flex-row sm:items-start sm:p-7"><div class="flex flex-wrap items-center gap-5"><img src="{{ asset('img/logo.png') }}" alt="Logo SIMRH" class="h-16 w-44 object-contain"><div><p class="text-xs font-bold uppercase tracking-[.2em] text-amber-300">Reporte del taller</p><h2 class="mt-2 text-2xl font-bold">{{ $title }}</h2><p class="mt-2 text-sm text-slate-300">{{ $description }}</p></div></div><div class="text-sm sm:text-right"><p>Generado: {{ now()->format('d/m/Y H:i') }}</p><p class="mt-1 text-slate-300">Por: {{ auth()->user()->name }}</p>@if(request('from') || request('to'))<p class="mt-1 text-slate-300">Periodo: {{ request('from','Inicio') }} a {{ request('to','Hoy') }}</p>@endif</div></header>
         <div class="grid gap-px bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">@foreach($totals as $label=>$value)<div class="bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ $label }}</p><p class="mt-1 text-xl font-bold text-slate-900">{{ $value }}</p></div>@endforeach</div>
         <div class="overflow-x-auto p-4 sm:p-6">
             <table class="w-full min-w-[850px] border-collapse text-left text-sm"><thead class="bg-slate-100 text-slate-600"><tr>
@@ -47,8 +48,9 @@
                     @else<td class="p-3">{{ $row->id }}</td><td class="p-3 font-semibold">{{ $row->user->name }}</td><td class="p-3">{{ $row->occurred_at->format('d/m/Y H:i:s') }}</td><td class="p-3">{{ $row->action }}</td><td class="p-3">{{ $row->table_name }}{{ $row->record_id ? ' #'.$row->record_id : '' }}</td><td class="max-w-md p-3">{{ $row->details }}</td>
                     @endif
                 </tr>@empty<tr><td colspan="8" class="p-8 text-center text-slate-500">No hay registros para los filtros seleccionados.</td></tr>@endforelse
-            </tbody><tfoot><tr class="bg-amber-50 font-bold"><td colspan="8" class="p-3">Total de registros: {{ $rows->count() }}</td></tr></tfoot></table>
+            </tbody><tfoot><tr class="bg-amber-50 font-bold"><td colspan="8" class="p-3">Registros mostrados: {{ $rows->count() }} · Total filtrado: {{ $rows->total() }}</td></tr></tfoot></table>
         </div>
+        <div class="border-t border-slate-200 px-4 py-4 print:hidden sm:px-6">{{ $rows->links() }}</div>
         <footer class="flex flex-wrap justify-between gap-3 border-t border-slate-200 p-4 text-xs text-slate-500 sm:px-6"><span>SIMRH · Sistema de Información para el Manejo de Reparaciones y Herramientas</span><span>Fin del reporte · {{ now()->format('d/m/Y') }}</span></footer>
     </article>
 </div>

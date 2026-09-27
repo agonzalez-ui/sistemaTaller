@@ -85,6 +85,7 @@ Route::resource('invoices', InvoiceController::class)->only(['index', 'create', 
 /* reportes operativos y bitácoras */
 Route::middleware(['auth', 'verified', 'module:reports'])->prefix('reports')->name('reports.')->group(function () {
     Route::get('/', [ReportController::class, 'index'])->name('index');
+    Route::get('/excel/{type}', [ReportController::class, 'excel'])->name('excel');
     Route::get('/billing', [ReportController::class, 'billing'])->name('billing');
     Route::get('/orders', [ReportController::class, 'orders'])->name('orders');
     Route::get('/inventory', [ReportController::class, 'inventory'])->name('inventory');

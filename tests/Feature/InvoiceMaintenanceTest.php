@@ -38,7 +38,7 @@ test('creates one invoice from an eligible order with protected snapshots and se
         ->and($invoice->items)->toHaveCount(2)->and($invoice->items->first()->description)->toContain('Filtro');
     $this->part->update(['price' => 9000]);
     expect($invoice->items->first()->fresh()->unit_price)->toBe('2500.00');
-    $this->get(route('invoices.show', $invoice))->assertSuccessful()->assertSee('₡21.470,00')->assertSee('Imprimir');
+    $this->get(route('invoices.show', $invoice))->assertSuccessful()->assertSee('₡21.470,00')->assertSee('Imprimir')->assertSee('Logo SIMRH');
     $this->post(route('invoices.store'), ['order_id' => $this->order->id, 'discount' => 0, 'tax_rate' => 13])->assertSessionHasErrors('order_id');
     expect(Invoice::count())->toBe(1);
 });

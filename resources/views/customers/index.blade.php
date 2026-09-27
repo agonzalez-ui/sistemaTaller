@@ -24,6 +24,21 @@
             @endcan
         </div>
 
+        <form method="GET" action="{{ route('customers.index') }}" class="mb-6 grid gap-3 rounded-2xl bg-slate-200/60 p-4 sm:grid-cols-[1fr_180px_auto_auto] sm:items-end">
+            <div>
+                <label for="search" class="block text-sm font-semibold text-slate-700">Buscar cliente</label>
+                <input id="search" name="search" value="{{ request('search') }}" maxlength="100" placeholder="Nombre, identificación, teléfono o correo" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4">
+            </div>
+            <div>
+                <label for="status" class="block text-sm font-semibold text-slate-700">Estado</label>
+                <select id="status" name="status" class="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3">
+                    <option value="">Todos</option><option value="active" @selected(request('status') === 'active')>Activos</option><option value="inactive" @selected(request('status') === 'inactive')>Inactivos</option>
+                </select>
+            </div>
+            <button class="min-h-12 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white">Buscar</button>
+            <a href="{{ route('customers.index') }}" class="inline-flex min-h-12 items-center justify-center px-3 font-semibold text-slate-600">Limpiar</a>
+        </form>
+
         <div class="rounded-xl border border-slate-200">
             <table class="block w-full border-collapse text-left text-sm md:table md:table-fixed">
                 <thead class="hidden bg-slate-50 text-slate-600 md:table-header-group">
@@ -104,7 +119,7 @@
                     @empty
                         <tr class="block md:table-row">
                             <td colspan="4" class="block px-4 py-8 text-center text-slate-500 md:table-cell">
-                                Todavía no hay clientes registrados.
+                                No hay clientes que coincidan con la búsqueda.
                             </td>
                         </tr>
                     @endforelse
