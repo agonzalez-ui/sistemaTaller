@@ -15,24 +15,27 @@ use App\Http\Controllers\SystemInformationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleBrandController;
 use App\Http\Controllers\VehicleController;
+use App\Models\SparePart;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
 });
 
 /* Login */
-Route::get('auth/login', [LoginController::class, 'index'])->name('login');
-Route::post('auth/login', [LoginController::class, 'store'])->name('login.store');
+Route::get('auth/login', [LoginController::class, 'index'])->middleware('guest')->name('login');
+Route::post('auth/login', [LoginController::class, 'store'])->middleware('guest')->name('login.store');
 
 /* Register */
 Route::post('/auth/logout', [LoginController::class, 'destroy'])
     ->middleware('auth')->name('logout');
 
-Route::get('auth/register', [RegisterController::class, 'index'])->name('register');
-Route::post('auth/register', [RegisterController::class, 'store'])->name('register.store');
+Route::get('auth/register', [RegisterController::class, 'index'])->middleware('guest')->name('register');
+Route::post('auth/register', [RegisterController::class, 'store'])->middleware(['guest', 'throttle:3,1'])->name('register.store');
 
 /* ruta para confirmar cuenta email */
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
@@ -55,7 +58,19 @@ Route::post('/email/verification-notification', function (Request $request) {
 
 /* Dashboard */
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $lowStockParts = collect();
+
+    if (request()->user()->hasModulePermission('inventory', 'view')) {
+        $lowStockParts = SparePart::query()
+            ->where('active', true)
+            ->whereColumn('stock_quantity', '<=', 'minimum_quantity')
+            ->orderBy('stock_quantity')
+            ->orderBy('name')
+            ->limit(5)
+            ->get(['id', 'code', 'name', 'stock_quantity', 'minimum_quantity']);
+    }
+
+    return view('dashboard', compact('lowStockParts'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 /* Clientes = customers */
@@ -95,6 +110,8 @@ Route::middleware(['auth', 'verified', 'module:reports'])->prefix('reports')->na
 
 /* órdenes de trabajo */
 Route::resource('orders', OrderController::class)->middleware(['auth', 'verified', 'module:orders']);
+Route::post('orders/{order}/deliver', [OrderController::class, 'deliver'])
+    ->middleware(['auth', 'verified', 'module:orders,edit'])->name('orders.deliver');
 Route::post('orders/{order}/items', [OrderItemController::class, 'store'])
     ->middleware(['auth', 'verified', 'module:orders,edit'])->name('orders.items.store');
 Route::put('orders/{order}/items/{orderItem}', [OrderItemController::class, 'update'])

@@ -19,10 +19,12 @@ beforeEach(function () {
     $this->seed(SimrhSeeder::class);
     $this->admin = User::factory()->create();
     $this->admin->forceFill(['role_id' => 1])->save();
+    $this->mechanic = User::factory()->create(['name' => 'Mecánico de prueba']);
+    $this->mechanic->forceFill(['role_id' => 2])->save();
     $this->customer = Customer::create(['name' => 'Cliente Factura', 'identification_number' => '116380560', 'email' => 'cliente@example.com', 'created_by' => $this->admin->id]);
     $this->vehicle = Vehicle::create(['license_plate' => 'M123456', 'customer_id' => $this->customer->id, 'vehicle_brand_id' => VehicleBrand::where('name', 'Honda')->value('id'), 'vehicle_type_id' => VehicleType::where('name', 'Motocicleta')->value('id'), 'model' => 'CB190', 'year' => 2024, 'active' => true, 'created_by' => $this->admin->id]);
     $this->part = SparePart::create(['code' => 'REP-001', 'name' => 'Filtro', 'price' => 2500, 'stock_quantity' => 8, 'minimum_quantity' => 2, 'active' => true, 'created_by' => $this->admin->id]);
-    $this->order = Order::create(['number' => 'OT-2026-000001', 'customer_id' => $this->customer->id, 'vehicle_id' => $this->vehicle->id, 'order_status_id' => OrderStatus::where('name', 'Listo')->value('id'), 'description' => 'Mantenimiento', 'labor_cost' => 15000, 'received_at' => now(), 'created_by' => $this->admin->id]);
+    $this->order = Order::create(['number' => 'OT-2026-000001', 'customer_id' => $this->customer->id, 'vehicle_id' => $this->vehicle->id, 'order_status_id' => OrderStatus::where('name', 'Listo')->value('id'), 'mechanic_id' => $this->mechanic->id, 'description' => 'Mantenimiento', 'diagnosis' => 'Mantenimiento realizado y funcionamiento verificado.', 'labor_cost' => 15000, 'received_at' => now(), 'created_by' => $this->admin->id]);
     OrderItem::create(['order_id' => $this->order->id, 'spare_part_id' => $this->part->id, 'quantity' => 2, 'unit_price' => 2500, 'line_total' => 5000]);
     $this->actingAs($this->admin);
 });
@@ -38,9 +40,35 @@ test('creates one invoice from an eligible order with protected snapshots and se
         ->and($invoice->items)->toHaveCount(2)->and($invoice->items->first()->description)->toContain('Filtro');
     $this->part->update(['price' => 9000]);
     expect($invoice->items->first()->fresh()->unit_price)->toBe('2500.00');
-    $this->get(route('invoices.show', $invoice))->assertSuccessful()->assertSee('₡21.470,00')->assertSee('Imprimir')->assertSee('Logo SIMRH');
+    $this->get(route('invoices.show', $invoice))->assertSuccessful()->assertSee('₡21.470,00')->assertSee('Imprimir')->assertSee('Logo SIMRH')->assertSee('Registrar entrega');
     $this->post(route('invoices.store'), ['order_id' => $this->order->id, 'discount' => 0, 'tax_rate' => 13])->assertSessionHasErrors('order_id');
     expect(Invoice::count())->toBe(1);
+});
+
+test('records customer delivery after invoicing without unlocking billed details', function () {
+    $this->post(route('invoices.store'), ['order_id' => $this->order->id, 'discount' => 0, 'tax_rate' => 13])->assertSessionHasNoErrors();
+    $invoice = Invoice::firstOrFail();
+
+    $this->post(route('orders.deliver', $this->order))->assertSessionHasNoErrors();
+
+    expect($this->order->fresh()->status->name)->toBe('Entregado')
+        ->and($this->order->fresh()->delivered_at)->not->toBeNull()
+        ->and($invoice->fresh()->status)->toBe('ISSUED')
+        ->and(Invoice::count())->toBe(1);
+
+    $this->post(route('orders.deliver', $this->order))->assertSessionHasErrors('order');
+    $this->get(route('orders.edit', $this->order))->assertStatus(409);
+});
+
+test('does not allow delivery without an issued invoice', function () {
+    $this->post(route('orders.deliver', $this->order))->assertSessionHasErrors('order');
+
+    $this->post(route('invoices.store'), ['order_id' => $this->order->id, 'discount' => 0, 'tax_rate' => 0]);
+    $invoice = Invoice::firstOrFail();
+    $this->delete(route('invoices.destroy', $invoice), ['cancellation_reason' => 'Factura creada por error'])->assertSessionHasNoErrors();
+    $this->post(route('orders.deliver', $this->order))->assertSessionHasErrors('order');
+
+    expect($this->order->fresh()->status->name)->toBe('Listo');
 });
 
 test('rejects unfinished empty and invalid invoice amounts', function () {
@@ -52,6 +80,15 @@ test('rejects unfinished empty and invalid invoice amounts', function () {
     $this->order->items()->delete();
     $this->order->update(['labor_cost' => 0]);
     $this->post(route('invoices.store'), ['order_id' => $this->order->id, 'discount' => 0, 'tax_rate' => 0])->assertSessionHasErrors('order_id');
+    expect(Invoice::count())->toBe(0);
+});
+
+test('rejects invoicing an otherwise eligible legacy order without mechanic or diagnosis', function () {
+    $this->order->update(['mechanic_id' => null, 'diagnosis' => null]);
+
+    $this->get(route('invoices.create'))->assertDontSee($this->order->number);
+    $this->post(route('invoices.store'), ['order_id' => $this->order->id, 'discount' => 0, 'tax_rate' => 13])->assertSessionHasErrors('order_id');
+
     expect(Invoice::count())->toBe(0);
 });
 

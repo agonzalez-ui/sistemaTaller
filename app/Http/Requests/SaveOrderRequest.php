@@ -50,11 +50,20 @@ class SaveOrderRequest extends FormRequest
             if ($order && $order->order_status_id !== $this->integer('order_status_id') && ! $this->filled('status_notes')) {
                 $validator->errors()->add('status_notes', 'Indique el motivo o detalle del cambio de estado.');
             }
-            if (! $order && OrderStatus::find($this->integer('order_status_id'))?->is_final) {
-                $validator->errors()->add('order_status_id', 'Una orden nueva no puede iniciar en un estado final.');
+            $requestedStatus = OrderStatus::find($this->integer('order_status_id'));
+            if (! $order && $requestedStatus?->name !== 'Recibido') {
+                $validator->errors()->add('order_status_id', 'Una orden nueva debe iniciar en estado Recibido.');
             }
-            if (OrderStatus::find($this->integer('order_status_id'))?->name === 'Cancelada') {
+            if ($requestedStatus?->name === 'Cancelada') {
                 $validator->errors()->add('order_status_id', 'Utilice la acción Cancelar orden para devolver correctamente los repuestos.');
+            }
+            if ($requestedStatus?->allows_invoicing) {
+                if (! $this->filled('mechanic_id')) {
+                    $validator->errors()->add('mechanic_id', 'Asigne un mecánico antes de marcar la orden como lista o entregada.');
+                }
+                if (! $this->filled('diagnosis') || trim((string) $this->input('diagnosis')) === '') {
+                    $validator->errors()->add('diagnosis', 'Registre el diagnóstico y trabajo realizado antes de finalizar la orden.');
+                }
             }
         }];
     }

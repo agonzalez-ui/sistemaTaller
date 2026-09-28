@@ -54,8 +54,32 @@ test('validates motorcycle ownership active mechanic and initial status', functi
     $seller->forceFill(['role_id' => 3])->save();
     $this->post(route('orders.store'), [...$this->orderData, 'mechanic_id' => $seller->id])->assertSessionHasErrors('mechanic_id');
     $this->post(route('orders.store'), [...$this->orderData, 'order_status_id' => OrderStatus::where('name', 'Entregado')->value('id')])->assertSessionHasErrors('order_status_id');
+    $this->post(route('orders.store'), [...$this->orderData, 'order_status_id' => OrderStatus::where('name', 'En reparación')->value('id')])->assertSessionHasErrors('order_status_id');
     $this->post(route('orders.store'), [...$this->orderData, 'order_status_id' => OrderStatus::where('name', 'Cancelada')->value('id')])->assertSessionHasErrors('order_status_id');
     expect(Order::count())->toBe(0);
+});
+test('requires a mechanic and completed diagnosis before an order can be invoiced', function () {
+    $order = createTestOrder($this);
+    $ready = OrderStatus::where('name', 'Listo')->firstOrFail();
+
+    $this->put(route('orders.update', $order), [
+        ...$this->orderData,
+        'mechanic_id' => null,
+        'diagnosis' => null,
+        'order_status_id' => $ready->id,
+        'status_notes' => 'Trabajo finalizado',
+    ])->assertSessionHasErrors(['mechanic_id', 'diagnosis']);
+
+    expect($order->fresh()->status->name)->toBe('Recibido');
+
+    $this->put(route('orders.update', $order), [
+        ...$this->orderData,
+        'diagnosis' => 'Se cambió el filtro y se verificó el funcionamiento.',
+        'order_status_id' => $ready->id,
+        'status_notes' => 'Trabajo finalizado y probado',
+    ])->assertSessionHasNoErrors();
+
+    expect($order->fresh()->status->name)->toBe('Listo');
 });
 
 test('adds edits and removes parts with atomic inventory movements and price snapshots', function () {
@@ -90,10 +114,10 @@ test('records status history and locks final orders', function () {
     $this->put(route('orders.update', $order), [...$this->orderData, 'order_status_id' => $repair->id, 'status_notes' => 'Diagnóstico terminado'])->assertSessionHasNoErrors();
     expect(OrderHistory::count())->toBe(2)->and($order->fresh()->status->name)->toBe('En reparación');
     $delivered = OrderStatus::where('name', 'Entregado')->firstOrFail();
-    $this->put(route('orders.update', $order), [...$this->orderData, 'order_status_id' => $delivered->id, 'status_notes' => 'Entregada al cliente'])->assertSessionHasNoErrors();
+    $this->put(route('orders.update', $order), [...$this->orderData, 'diagnosis' => 'Diagnóstico y reparación completados.', 'order_status_id' => $delivered->id, 'status_notes' => 'Entregada al cliente'])->assertSessionHasNoErrors();
     expect($order->fresh()->delivered_at)->not->toBeNull();
     $this->get(route('orders.edit', $order))->assertStatus(409);
-    $this->put(route('orders.update', $order), [...$this->orderData, 'order_status_id' => $delivered->id, 'status_notes' => null])->assertSessionHasErrors('order');
+    $this->put(route('orders.update', $order), [...$this->orderData, 'diagnosis' => 'Diagnóstico y reparación completados.', 'order_status_id' => $delivered->id, 'status_notes' => null])->assertSessionHasErrors('order');
     $this->post(route('orders.items.store', $order), ['spare_part_id' => $this->part->id, 'quantity' => 1])->assertSessionHasErrors('order');
 });
 

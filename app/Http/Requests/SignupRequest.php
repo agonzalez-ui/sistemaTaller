@@ -2,22 +2,18 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 use Override;
 
-class SignupRequest extends FormRequest {
-  
-
- 
-
+class SignupRequest extends FormRequest
+{
     #[Override]
-    public function messages() :array
+    public function messages(): array
     {
         return [
             'name.required' => 'El nombre es obligatorio',
-            'email.required' => 'El email es bligatorio',
+            'email.required' => 'El correo es obligatorio',
             'email.email' => 'Email no válido',
             'email.unique' => 'Este email ya esta registrado',
             'password.required' => 'La contraseña es obligatoria',
@@ -27,22 +23,16 @@ class SignupRequest extends FormRequest {
             'password.mixed' => 'La contraseña debe tener al menos 1 letra mayúscula y 1 letra minúscula',
             'password.symbols' => 'La contraseña debe tener al menos 1 caracter especial ($%#")',
             'password.number' => 'La contraseña debe tener al menos 1 número',
-            'password.uncompromised' => 'La contraseña ha aparecido en filtraciones de datos. Elige una mas segura.'
-         ];
+            'password.uncompromised' => 'La contraseña ha aparecido en filtraciones de datos. Elige una mas segura.',
+        ];
     }
 
-    public function rules(): array {
+    public function rules(): array
+    {
         return [
-            'name' => [ 'required', 'string' ],
-            'email' => [ 'required', 'email','unique:users,email' ],
-            'password' => ['required', 'confirmed', 
-                Password::min(4)
-                    /* ->letters()
-                    ->mixedCase()
-                    ->symbols()
-                    ->numbers()
-                    ->uncompromised() */
-            ]
+            'name' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:150', 'unique:users,email'],
+            'password' => ['required', 'string', 'max:255', 'confirmed', Password::min(8)->letters()->numbers()],
         ];
     }
 }

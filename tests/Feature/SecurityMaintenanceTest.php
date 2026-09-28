@@ -10,6 +10,7 @@ use Database\Seeders\SimrhSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 
 uses(RefreshDatabase::class);
 
@@ -132,4 +133,24 @@ test('login rejects disabled users and logs successful login and explicit logout
     $this->post(route('logout'))->assertRedirect(route('login'));
     $log = AccessLog::where('user_id', $user->id)->firstOrFail();
     expect($log->logged_out_at)->not->toBeNull()->and($log->logout_type)->toBe('MANUAL');
+});
+
+test('login uses a generic error and temporarily limits repeated failed attempts', function () {
+    $email = 'acceso-seguro@example.com';
+    $key = $email.'|127.0.0.1';
+    RateLimiter::clear($key);
+    Auth::logout();
+
+    $unknown = $this->post(route('login.store'), ['email' => $email, 'password' => 'Incorrecta123']);
+    $unknown->assertSessionHas('error', 'Las credenciales proporcionadas no son correctas.');
+
+    foreach (range(1, 4) as $attempt) {
+        $this->post(route('login.store'), ['email' => $email, 'password' => 'Incorrecta123']);
+    }
+
+    $this->post(route('login.store'), ['email' => $email, 'password' => 'Incorrecta123'])
+        ->assertSessionHas('error', fn (string $message) => str_contains($message, 'Demasiados intentos'));
+
+    expect(RateLimiter::tooManyAttempts($key, 5))->toBeTrue();
+    RateLimiter::clear($key);
 });

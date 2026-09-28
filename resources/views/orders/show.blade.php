@@ -12,10 +12,42 @@
             @elseif($order->status->allows_invoicing)
                 @can('module-access',['billing','create'])<a href="{{ route('invoices.create',['order'=>$order->id]) }}" class="inline-flex min-h-12 items-center rounded-xl bg-amber-400 px-4 py-3 font-bold">Generar factura</a>@endcan
             @endif
+            @can('module-access',['orders','edit'])
+                @if($order->status->name === 'Listo' && $order->invoices->contains('status', 'ISSUED'))
+                    <form method="POST" action="{{ route('orders.deliver', $order) }}" onsubmit="return confirm('¿Confirma que la moto fue entregada al cliente?')">@csrf<button class="min-h-12 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-500">Registrar entrega</button></form>
+                @endif
+            @endcan
             @can('module-access',['orders','edit']) @unless($order->status->is_final || $order->invoices->isNotEmpty())<a href="{{ route('orders.edit',$order) }}" class="inline-flex min-h-12 items-center rounded-xl bg-amber-50 px-4 py-3 font-semibold text-amber-800">Editar orden</a>@endunless @endcan
             @can('module-access',['orders','delete']) @unless($order->status->is_final || $order->invoices->isNotEmpty())<form method="POST" action="{{ route('orders.destroy',$order) }}" onsubmit="return confirm('¿Cancelar esta orden? Los repuestos se devolverán al inventario.')">@csrf @method('DELETE')<button class="min-h-12 rounded-xl px-4 py-3 font-semibold text-red-700">Cancelar orden</button></form>@endunless @endcan
         </div>
     </div>
+    @php
+        $workflow = ['Recibido', 'En diagnóstico', 'En reparación', 'Esperando repuesto', 'Listo', 'Entregado'];
+        $currentStep = array_search($order->status->name, $workflow, true);
+    @endphp
+    @if($order->status->name === 'Cancelada')
+        <section class="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800">
+            <p class="font-bold">Orden cancelada</p>
+            <p class="mt-1 text-sm">El historial y los repuestos utilizados se conservaron; las existencias fueron devueltas al inventario.</p>
+        </section>
+    @else
+        <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5" aria-labelledby="workflow-title">
+            <div class="flex flex-wrap items-end justify-between gap-2">
+                <div><p class="text-xs font-bold uppercase tracking-wider text-slate-500">Seguimiento</p><h2 id="workflow-title" class="mt-1 text-lg font-bold text-slate-900">Avance de la orden</h2></div>
+                <p class="text-sm font-semibold text-amber-800">Estado actual: {{ $order->status->name }}</p>
+            </div>
+            <ol class="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                @foreach($workflow as $index => $step)
+                    @php($completed = $currentStep !== false && $index <= $currentStep)
+                    <li class="rounded-xl border p-3 text-sm {{ $step === $order->status->name ? 'border-amber-400 bg-amber-100 text-slate-950' : ($completed ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-500') }}">
+                        <span class="block text-xs font-bold">{{ $completed ? '✓' : $index + 1 }}</span>
+                        <span class="mt-1 block font-semibold">{{ $step }}</span>
+                    </li>
+                @endforeach
+            </ol>
+            <p class="mt-3 text-xs text-slate-500">“Esperando repuesto” puede utilizarse cuando la reparación debe pausarse; luego la orden puede volver a reparación.</p>
+        </section>
+    @endif
     <section class="grid gap-5 lg:grid-cols-[1.3fr_.7fr]">
         <div class="rounded-2xl bg-slate-900 p-5 text-white sm:p-6"><div class="flex flex-wrap items-center justify-between gap-3"><span class="font-mono text-sm text-amber-300">{{ $order->number }}</span><span class="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold">{{ $order->status->name }}</span></div><h2 class="mt-4 text-2xl font-bold">{{ $order->customer->name }}</h2><p class="mt-2 text-slate-200">{{ $order->vehicle->license_plate }} · {{ $order->vehicle->brand->name }} {{ $order->vehicle->model }} · {{ $order->vehicle->year }}</p><dl class="mt-6 grid gap-4 sm:grid-cols-2"><div><dt class="text-sm text-slate-400">Mecánico</dt><dd class="mt-1 font-semibold">{{ $order->mechanic?->name ?? 'Sin asignar' }}</dd></div><div><dt class="text-sm text-slate-400">Recibida</dt><dd class="mt-1 font-semibold">{{ $order->received_at->format('d/m/Y H:i') }}</dd></div>@if($order->delivered_at)<div><dt class="text-sm text-slate-400">Finalizada</dt><dd class="mt-1 font-semibold">{{ $order->delivered_at->format('d/m/Y H:i') }}</dd></div>@endif</dl></div>
         <div class="rounded-2xl border border-slate-200 p-5"><h2 class="text-lg font-bold">Resumen</h2><dl class="mt-4 space-y-3 text-sm"><div class="flex justify-between gap-3"><dt>Repuestos</dt><dd class="font-semibold">₡{{ number_format($partsTotal,2,',','.') }}</dd></div><div class="flex justify-between gap-3"><dt>Mano de obra</dt><dd class="font-semibold">₡{{ number_format((float)$order->labor_cost,2,',','.') }}</dd></div><div class="flex justify-between gap-3 border-t pt-3 text-lg"><dt class="font-bold">Total actual</dt><dd class="font-bold">₡{{ number_format($total,2,',','.') }}</dd></div></dl><p class="mt-4 text-xs text-slate-500">El total es informativo hasta generar la factura.</p></div>

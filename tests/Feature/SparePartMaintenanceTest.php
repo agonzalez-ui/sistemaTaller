@@ -40,6 +40,19 @@ test('spare part catalog creates edits searches and preserves stock against forg
     $this->post(route('spareparts.store'), [...$this->data, 'code' => 'NEW', 'price' => -1, 'minimum_quantity' => -1])->assertSessionHasErrors(['price', 'minimum_quantity']);
     $this->post(route('spareparts.store'), [...$this->data, 'code' => 'NEW', 'price' => '2.555'])->assertSessionHasErrors('price');
 });
+test('dashboard warns authorized users about parts that require restocking', function () {
+    $part = inventoryTestPart($this);
+
+    $this->get(route('dashboard'))
+        ->assertSuccessful()
+        ->assertSee('Atención de inventario')
+        ->assertSee($part->name)
+        ->assertSee('Agotado')
+        ->assertSee(route('spareparts.index', ['stock' => 'low']));
+
+    $part->update(['stock_quantity' => 10]);
+    $this->get(route('dashboard'))->assertDontSee('Atención de inventario');
+});
 test('entries exits and physical count adjustments retain correct ledger balances and cannot replay', function () {
     $part = inventoryTestPart($this);
     $entry = inventoryTestMovement('IN', 10);

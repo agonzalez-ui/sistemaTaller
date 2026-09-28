@@ -116,6 +116,24 @@ class OrderService
         });
     }
 
+    public function deliver(Request $request, Order $order): void
+    {
+        DB::transaction(function () use ($request, $order) {
+            $locked = Order::with('status')->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status?->name !== 'Listo') {
+                throw ValidationException::withMessages(['order' => 'Solo una orden en estado Listo puede registrarse como entregada.']);
+            }
+            if (! $locked->invoices()->where('status', 'ISSUED')->exists()) {
+                throw ValidationException::withMessages(['order' => 'La orden debe tener una factura emitida antes de registrar la entrega.']);
+            }
+
+            $delivered = OrderStatus::where('name', 'Entregado')->where('active', true)->firstOrFail();
+            $locked->update(['order_status_id' => $delivered->id, 'delivered_at' => now()]);
+            $this->history($request, $locked, 'Moto entregada al cliente después de emitir la factura.');
+            SecurityAudit::record($request, 'UPDATE', 'orders', $locked->id, 'Entrega registrada: '.$locked->number.'.');
+        });
+    }
+
     private function moveStock(Request $request, Order $order, SparePart $part, string $type, int $quantity, string $notes): void
     {
         $old = (int) $part->stock_quantity;

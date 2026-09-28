@@ -8,6 +8,8 @@ use App\Support\SecurityAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class LoginController extends Controller
 {
@@ -20,10 +22,19 @@ class LoginController extends Controller
     public function store(SignInRequest $request)
     {
         $data = $request->validated();
+        $throttleKey = Str::lower($data['email']).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()->withInput($request->only('email'))->with('error', "Demasiados intentos. Intente nuevamente en {$seconds} segundos.");
+        }
 
         /* verificamos si el usuario ingreso el password correcto */
         if (! Auth::attempt($data + ['active' => true])) {
-            return back()->with('error', 'Credenciales Incorrectas.');
+            RateLimiter::hit($throttleKey, 60);
+
+            return back()->withInput($request->only('email'))->with('error', 'Las credenciales proporcionadas no son correctas.');
         }
 
         if (Auth::user()->role_id && ! Auth::user()->role?->active) {
@@ -33,6 +44,7 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
+        RateLimiter::clear($throttleKey);
         SecurityAudit::openAccess($request);
 
         return redirect()->route('dashboard');

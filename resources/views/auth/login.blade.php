@@ -20,6 +20,8 @@
             placeholder="Email de Registro"
             class="w-full border border-gray-300 p-3 rounded-lg" 
             name="email" 
+            required
+            autocomplete="email"
             tabindex="1"
             value="{{ old('email') }}"
         />
@@ -30,13 +32,14 @@
     <div class="flex flex-col gap-2">
         <div class="flex  items-center justify-between">
             <label class="font-bold text-2xl">Contraseña</label>
-            <a href="#" class="text-indigo-950" tabindex="3">¿Olvidaste tu Contraseña?</a>
         </div>
         <input 
             type="password" 
             placeholder="Contraseña de Registro" 
             class="w-full border border-gray-300 p-3 rounded-lg"
             name="password" 
+            required
+            autocomplete="current-password"
             tabindex="2" 
         />
     </div>

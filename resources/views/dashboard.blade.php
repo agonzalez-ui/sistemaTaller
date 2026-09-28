@@ -27,6 +27,38 @@
             Su cuenta está pendiente de asignación de rol. El administrador debe asignarle un rol para acceder a los módulos del taller.
         </div>
     @endif
+    @can('module-access', ['inventory', 'view'])
+        @if ($lowStockParts->isNotEmpty())
+            <section class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6" aria-labelledby="inventory-alert-title">
+                <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-amber-700">Atención de inventario</p>
+                        <h2 id="inventory-alert-title" class="mt-1 text-xl font-bold text-slate-900">Repuestos que requieren reposición</h2>
+                        <p class="mt-2 text-sm text-slate-600">Se muestran los repuestos activos con existencias iguales o inferiores al mínimo.</p>
+                    </div>
+                    <a href="{{ route('spareparts.index', ['stock' => 'low']) }}" class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-amber-400 px-5 py-3 font-bold text-slate-950 hover:bg-amber-300">
+                        Revisar inventario →
+                    </a>
+                </div>
+                <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($lowStockParts as $part)
+                        <a href="{{ route('spareparts.show', $part) }}" class="rounded-xl border border-amber-200 bg-white p-4 transition hover:border-amber-400">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate font-bold text-slate-900">{{ $part->name }}</p>
+                                    <p class="mt-1 font-mono text-xs text-slate-500">{{ $part->code }}</p>
+                                </div>
+                                <span class="shrink-0 rounded-full px-3 py-1 text-xs font-bold {{ $part->stock_quantity === 0 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800' }}">
+                                    {{ $part->stock_quantity === 0 ? 'Agotado' : $part->stock_quantity.' disponibles' }}
+                                </span>
+                            </div>
+                            <p class="mt-3 text-xs text-slate-500">Existencia mínima: {{ $part->minimum_quantity }}</p>
+                        </a>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+    @endcan
     <div class="mt-7 grid gap-5 lg:grid-cols-3">
         @can('module-access', ['orders', 'view'])
         <a href="{{ route('orders.index') }}" class="group relative flex flex-col justify-between gap-8 overflow-hidden rounded-2xl bg-[#1E3A5F] p-6 text-white transition hover:bg-[#254870] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:p-7">

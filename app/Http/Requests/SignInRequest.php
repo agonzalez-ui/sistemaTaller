@@ -9,10 +9,10 @@ use Override;
 class SignInRequest extends FormRequest
 {
     #[Override]
-    public function attributes() :array
+    public function attributes(): array
     {
         return [
-            'password' => 'contraseña'
+            'password' => 'contraseña',
         ];
     }
 
@@ -20,9 +20,7 @@ class SignInRequest extends FormRequest
     #[Override]
     public function messages(): array
     {
-        return [
-            'email.exists' => 'No encontramos una cuenta con ese correo electrónico.'
-        ];
+        return [];
     }
 
     /**
@@ -33,8 +31,8 @@ class SignInRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'exists:users,email'],
-            'password' => ['required']
+            'email' => ['required', 'email', 'max:150'],
+            'password' => ['required', 'string', 'max:255'],
         ];
     }
 }

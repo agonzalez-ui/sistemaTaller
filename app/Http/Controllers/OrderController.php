@@ -78,6 +78,13 @@ class OrderController extends Controller
         return redirect()->route('orders.show', $order)->with('success', 'Orden cancelada y repuestos devueltos al inventario.');
     }
 
+    public function deliver(Request $request, Order $order, OrderService $service): RedirectResponse
+    {
+        $service->deliver($request, $order);
+
+        return redirect()->route('orders.show', $order)->with('success', 'Entrega registrada correctamente. La orden quedó finalizada.');
+    }
+
     private function catalogs(): array
     {
         return ['statuses' => OrderStatus::where('active', true)->orderBy('sort_order')->get(), 'mechanics' => User::where('active', true)->whereHas('role', fn (Builder $query) => $query->where('name', 'Mecánico')->where('active', true))->orderBy('name')->get()];
@@ -91,6 +98,9 @@ class OrderController extends Controller
 
         $catalogs = $this->catalogs();
         $catalogs['statuses'] = $catalogs['statuses']->where('name', '!=', 'Cancelada')->values();
+        if (! $order) {
+            $catalogs['statuses'] = $catalogs['statuses']->where('name', 'Recibido')->values();
+        }
 
         return [...$catalogs, 'customers' => $customers, 'vehicles' => $vehicles];
     }

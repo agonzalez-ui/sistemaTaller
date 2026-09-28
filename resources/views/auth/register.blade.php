@@ -10,7 +10,7 @@
             <label class="font-bold text-2xl block" for="name">Nombre</label>
 
             <input id="name" type="text" placeholder="Tu Nombre" class="w-full border border-gray-300 p-3 rounded-lg"
-                name="name" value="{{ old('name') }}" />
+                name="name" value="{{ old('name') }}" required maxlength="150" autocomplete="name" />
         </div>
 
         <x-input-error field="name" />
@@ -19,7 +19,7 @@
             <label class="font-bold text-2xl block" for="email">Email</label>
 
             <input id="email" type="email" placeholder="Email de Registro"
-                class="w-full border border-gray-300 p-3 rounded-lg" name="email" value="{{ old('email') }}" />
+                class="w-full border border-gray-300 p-3 rounded-lg" name="email" value="{{ old('email') }}" required maxlength="150" autocomplete="email" />
         </div>
 
         <x-input-error field="email" />
@@ -28,7 +28,8 @@
             <label class="font-bold text-2xl block">Contraseña</label>
 
             <input type="password" placeholder="Contraseña de Registro" class="w-full border border-gray-300 p-3 rounded-lg"
-                name="password" />
+                name="password" required autocomplete="new-password" />
+            <p class="text-sm text-slate-500">Use al menos 8 caracteres, incluyendo letras y números.</p>
         </div>
 
         <x-input-error field="password" />
@@ -37,7 +38,7 @@
             <label class="font-bold text-2xl block" for="password_confirmation">Repetir Contraseña</label>
 
             <input type="password" placeholder="Contraseña de Registro" class="w-full border border-gray-300 p-3 rounded-lg"
-                name="password_confirmation" />
+                name="password_confirmation" required autocomplete="new-password" />
         </div>
 
         <input type="submit" value='Registrarme'

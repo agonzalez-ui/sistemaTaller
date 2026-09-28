@@ -40,6 +40,7 @@ class InvoiceController extends Controller
     {
         $orders = Order::with(['customer', 'vehicle.brand', 'status', 'items'])
             ->whereHas('status', fn (Builder $query) => $query->where('allows_invoicing', true)->where('name', '!=', 'Cancelada'))
+            ->whereNotNull('mechanic_id')->whereNotNull('diagnosis')->where('diagnosis', '!=', '')
             ->whereDoesntHave('invoices')->orderByDesc('received_at')->get();
         $selectedOrder = $orders->firstWhere('id', $request->integer('order'));
 
@@ -55,7 +56,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): View
     {
-        $invoice->load(['customer.phones', 'vehicle.brand', 'order', 'creator', 'items']);
+        $invoice->load(['customer.phones', 'vehicle.brand', 'order.status', 'creator', 'items']);
 
         return view('invoices.show', compact('invoice'));
     }

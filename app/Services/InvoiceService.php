@@ -19,6 +19,9 @@ class InvoiceService
             if (! $order->status?->allows_invoicing || $order->status?->name === 'Cancelada') {
                 throw ValidationException::withMessages(['order_id' => 'La orden debe estar lista o entregada para poder facturarla.']);
             }
+            if (! $order->mechanic_id || blank($order->diagnosis)) {
+                throw ValidationException::withMessages(['order_id' => 'Complete el mecánico, diagnóstico y trabajo realizado antes de facturar la orden.']);
+            }
             if (Invoice::where('order_id', $order->id)->exists()) {
                 throw ValidationException::withMessages(['order_id' => 'Esta orden ya tiene una factura.']);
             }
