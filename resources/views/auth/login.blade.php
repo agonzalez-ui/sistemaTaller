@@ -32,6 +32,7 @@
     <div class="flex flex-col gap-2">
         <div class="flex  items-center justify-between">
             <label class="font-bold text-2xl">Contraseña</label>
+            <a href="{{ route('password.request') }}" class="text-sm font-semibold text-amber-700 hover:underline" tabindex="3">¿Olvidó su contraseña?</a>
         </div>
         <input 
             type="password" 
@@ -52,4 +53,7 @@
         class="bg-[#D97706] hover:bg-[#B85F05] w-full p-3 rounded-lg text-white font-bold  text-xl cursor-pointer" 
     />
 </form>
+@if (session('success'))
+    <div class="mt-5"><x-alert :message="session('success')" /></div>
+@endif
 @endsection

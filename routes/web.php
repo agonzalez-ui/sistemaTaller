@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InventoryMovementController;
 use App\Http\Controllers\InvoiceController;
@@ -29,6 +31,11 @@ Route::get('/', function () {
 /* Login */
 Route::get('auth/login', [LoginController::class, 'index'])->middleware('guest')->name('login');
 Route::post('auth/login', [LoginController::class, 'store'])->middleware('guest')->name('login.store');
+
+Route::get('auth/forgot-password', [ForgotPasswordController::class, 'create'])->middleware('guest')->name('password.request');
+Route::post('auth/forgot-password', [ForgotPasswordController::class, 'store'])->middleware(['guest', 'throttle:3,1'])->name('password.email');
+Route::get('auth/reset-password/{token}', [ResetPasswordController::class, 'create'])->middleware('guest')->name('password.reset');
+Route::post('auth/reset-password', [ResetPasswordController::class, 'store'])->middleware(['guest', 'throttle:5,1'])->name('password.update');
 
 /* Register */
 Route::post('/auth/logout', [LoginController::class, 'destroy'])
