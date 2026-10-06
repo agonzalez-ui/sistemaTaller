@@ -7,6 +7,10 @@
 
     <title>{{ config('app.name', 'SIMRH') }} - @yield('title')</title>
 
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+
+
     @fonts
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600">
@@ -49,3 +53,5 @@
 </body>
 
 </html>
+
+
