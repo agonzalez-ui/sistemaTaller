@@ -71,6 +71,9 @@
                                              font-semibold leading-6 text-slate-900">
                                     {{ $customer->name }}
                                 </span>
+                                <span class="mt-1 inline-flex rounded-full px-2 py-1 text-xs font-semibold {{ $customer->active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700' }}">
+                                    {{ $customer->active ? 'Activo' : 'Inactivo' }}
+                                </span>
                             </td>
 
                             <td
@@ -103,15 +106,27 @@
                                     @endcan
 
                                     @can('module-access', ['customers', 'delete'])
-                                    <form action="{{ route('customers.destroy', $customer) }}" method="POST"
-                                        onsubmit="return confirm('¿Seguro que desea eliminar este cliente?')">
-                                        @csrf
-                                        @method('DELETE')
+                                    @if ($customer->active)
+                                        <form action="{{ route('customers.destroy', $customer) }}" method="POST"
+                                            onsubmit="return confirm('¿Desea desactivar este cliente? Sus motos, órdenes y facturas se conservarán.')">
+                                            @csrf
+                                            @method('DELETE')
 
-                                        <button type="submit" class="font-medium text-red-600 hover:underline">
-                                            Eliminar
-                                        </button>
-                                    </form>
+                                            <button type="submit" class="font-medium text-red-600 hover:underline">
+                                                Desactivar
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('customers.restore', $customer) }}" method="POST"
+                                            onsubmit="return confirm('¿Desea reactivar este cliente?')">
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <button type="submit" class="font-medium text-emerald-700 hover:underline">
+                                                Reactivar
+                                            </button>
+                                        </form>
+                                    @endif
                                     @endcan
                                 </div>
                             </td>

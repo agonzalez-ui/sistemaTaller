@@ -13,16 +13,16 @@ test('logout clears the session and returns to login', function () {
     $this->assertGuest();
     $this->get(route('dashboard'))->assertRedirect(route('login'));
     $this->get(route('login'))->assertSuccessful();
-    $this->get(route('register'))->assertSuccessful();
+    $this->get('/auth/register')->assertNotFound();
 });
 
-test('public registration requires a stronger password', function () {
-    $this->post(route('register.store'), [
+test('public registration is disabled by default', function () {
+    $this->post('/auth/register', [
         'name' => 'Cuenta de prueba',
         'email' => 'registro@example.com',
-        'password' => '1234',
-        'password_confirmation' => '1234',
-    ])->assertSessionHasErrors('password');
+        'password' => 'ClaveSegura123',
+        'password_confirmation' => 'ClaveSegura123',
+    ])->assertNotFound();
 
     $this->assertDatabaseMissing('users', ['email' => 'registro@example.com']);
 });

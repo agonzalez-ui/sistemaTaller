@@ -43,5 +43,5 @@ test('help filters administrator instructions and documents completed features',
 });
 test('authentication screens retain their original layout without the system footer', function () {
     $this->get(route('login'))->assertSuccessful()->assertDontSee('Información del sistema');
-    $this->get(route('register'))->assertSuccessful()->assertDontSee('Información del sistema');
+    $this->get('/auth/register')->assertNotFound();
 });

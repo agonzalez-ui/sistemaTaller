@@ -38,6 +38,8 @@
                 @else
                     @if (Route::has('login'))
                         <a href="{{ route('login') }}" class="text-white font-bold uppercase p-2">Iniciar Sesión</a>
+                    @endif
+                    @if (Route::has('register'))
                         <a href="{{ route('register') }}"
                             class="font-bold uppercase border-2 border-amber-500 px-5 py-2 text-amber-500">Crear Cuenta</a>
                     @endif

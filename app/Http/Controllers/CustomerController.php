@@ -169,10 +169,29 @@ class CustomerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Customer $customer)
+    public function destroy(Customer $customer): RedirectResponse
     {
-        $customer->delete();
+        if (! $customer->active) {
+            return redirect()->route('customers.index')
+                ->with('success', 'El cliente ya se encuentra inactivo.');
+        }
 
-        return redirect()->route('customers.index')->with('success', 'Cliente eliminado correctamente.');
+        $customer->update(['active' => false]);
+
+        return redirect()->route('customers.index')
+            ->with('success', 'Cliente desactivado correctamente. Su historial se conserva.');
+    }
+
+    public function restore(Customer $customer): RedirectResponse
+    {
+        if ($customer->active) {
+            return redirect()->route('customers.index')
+                ->with('success', 'El cliente ya se encuentra activo.');
+        }
+
+        $customer->update(['active' => true]);
+
+        return redirect()->route('customers.index')
+            ->with('success', 'Cliente reactivado correctamente.');
     }
 }

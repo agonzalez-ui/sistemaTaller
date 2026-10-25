@@ -41,8 +41,10 @@ Route::post('auth/reset-password', [ResetPasswordController::class, 'store'])->m
 Route::post('/auth/logout', [LoginController::class, 'destroy'])
     ->middleware('auth')->name('logout');
 
-Route::get('auth/register', [RegisterController::class, 'index'])->middleware('guest')->name('register');
-Route::post('auth/register', [RegisterController::class, 'store'])->middleware(['guest', 'throttle:3,1'])->name('register.store');
+if (config('simrh.public_registration')) {
+    Route::get('auth/register', [RegisterController::class, 'index'])->middleware('guest')->name('register');
+    Route::post('auth/register', [RegisterController::class, 'store'])->middleware(['guest', 'throttle:3,1'])->name('register.store');
+}
 
 /* ruta para confirmar cuenta email */
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
@@ -83,6 +85,8 @@ Route::get('/dashboard', function () {
 /* Clientes = customers */
 Route::resource('customers', CustomerController::class)
     ->middleware(['auth', 'verified', 'module:customers']);
+Route::patch('customers/{customer}/restore', [CustomerController::class, 'restore'])
+    ->middleware(['auth', 'verified', 'module:customers,delete'])->name('customers.restore');
 
 /* Vehiculo = vehicle */
 Route::resource('vehicles', VehicleController::class)->except('show')

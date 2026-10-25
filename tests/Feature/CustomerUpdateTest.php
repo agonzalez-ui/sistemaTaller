@@ -60,3 +60,24 @@ test('searches customers by name identification phone email and status while pre
     }
     $this->get(route('customers.index', ['status' => 'inactive']))->assertSee('Cliente Diferente')->assertDontSee('Marcela Buscada');
 });
+
+test('deactivates and restores a customer without deleting related history', function () {
+    $user = User::factory()->create();
+    $user->forceFill(['role_id' => 1])->save();
+    $customer = Customer::create(['name' => 'Cliente con historial', 'identification_number' => '116380560', 'created_by' => $user->id]);
+    $phone = $customer->phones()->create(['phone' => '85649860']);
+
+    $this->actingAs($user)->delete(route('customers.destroy', $customer))
+        ->assertRedirect(route('customers.index'))
+        ->assertSessionHas('success', 'Cliente desactivado correctamente. Su historial se conserva.');
+
+    expect($customer->fresh())->not->toBeNull()
+        ->and($customer->fresh()->active)->toBeFalse()
+        ->and($phone->fresh())->not->toBeNull();
+
+    $this->patch(route('customers.restore', $customer))
+        ->assertRedirect(route('customers.index'))
+        ->assertSessionHas('success', 'Cliente reactivado correctamente.');
+
+    expect($customer->fresh()->active)->toBeTrue();
+});
