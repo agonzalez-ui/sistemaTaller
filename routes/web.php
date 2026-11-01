@@ -8,6 +8,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InventoryMovementController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderIntakePhotoController;
 use App\Http\Controllers\OrderItemController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\SystemInformationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleBrandController;
 use App\Http\Controllers\VehicleController;
+use App\Models\Order;
 use App\Models\SparePart;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -67,9 +69,12 @@ Route::post('/email/verification-notification', function (Request $request) {
 
 /* Dashboard */
 Route::get('/dashboard', function () {
+    $user = request()->user();
     $lowStockParts = collect();
+    $dashboardOrders = collect();
+    $dashboardStats = ['active' => 0, 'waiting' => 0, 'ready' => 0];
 
-    if (request()->user()->hasModulePermission('inventory', 'view')) {
+    if ($user->hasModulePermission('inventory', 'view')) {
         $lowStockParts = SparePart::query()
             ->where('active', true)
             ->whereColumn('stock_quantity', '<=', 'minimum_quantity')
@@ -79,7 +84,20 @@ Route::get('/dashboard', function () {
             ->get(['id', 'code', 'name', 'stock_quantity', 'minimum_quantity']);
     }
 
-    return view('dashboard', compact('lowStockParts'));
+    if ($user->hasModulePermission('orders', 'view')) {
+        $visibleOrders = Order::query()
+            ->when($user->isMechanic(), fn ($query) => $query->where('mechanic_id', $user->id));
+        $dashboardStats = [
+            'active' => (clone $visibleOrders)->whereHas('status', fn ($query) => $query->where('is_final', false))->count(),
+            'waiting' => (clone $visibleOrders)->whereHas('status', fn ($query) => $query->where('name', 'Esperando repuesto'))->count(),
+            'ready' => (clone $visibleOrders)->whereHas('status', fn ($query) => $query->where('name', 'Listo'))->count(),
+        ];
+        $dashboardOrders = $visibleOrders->with(['customer', 'vehicle', 'status', 'mechanic'])
+            ->whereHas('status', fn ($query) => $query->where('is_final', false))
+            ->orderBy('received_at')->limit(6)->get();
+    }
+
+    return view('dashboard', compact('lowStockParts', 'dashboardOrders', 'dashboardStats'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 /* Clientes = customers */
@@ -129,6 +147,10 @@ Route::put('orders/{order}/items/{orderItem}', [OrderItemController::class, 'upd
     ->middleware(['auth', 'verified', 'module:orders,edit'])->name('orders.items.update');
 Route::delete('orders/{order}/items/{orderItem}', [OrderItemController::class, 'destroy'])
     ->middleware(['auth', 'verified', 'module:orders,edit'])->name('orders.items.destroy');
+Route::get('orders/{order}/intake-photos/{photo}', [OrderIntakePhotoController::class, 'show'])
+    ->middleware(['auth', 'verified', 'module:orders'])->name('orders.intake-photos.show');
+Route::delete('orders/{order}/intake-photos/{photo}', [OrderIntakePhotoController::class, 'destroy'])
+    ->middleware(['auth', 'verified', 'module:orders,edit'])->name('orders.intake-photos.destroy');
 
 /* usuarios y roles */
 Route::middleware(['auth', 'verified', 'can:manage-security'])->group(function () {

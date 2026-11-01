@@ -18,6 +18,10 @@ class Order extends Model
         'mechanic_id',
         'description',
         'diagnosis',
+        'odometer',
+        'fuel_level',
+        'intake_condition',
+        'intake_accessories',
         'labor_cost',
         'received_at',
         'delivered_at',
@@ -53,6 +57,8 @@ class Order extends Model
     {
         return [
             'labor_cost' => 'decimal:2',
+            'odometer' => 'integer',
+            'intake_accessories' => 'array',
             'received_at' => 'datetime',
             'delivered_at' => 'datetime',
         ];
@@ -71,5 +77,10 @@ class Order extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class, 'order_id');
+    }
+
+    public function intakePhotos(): HasMany
+    {
+        return $this->hasMany(OrderIntakePhoto::class, 'order_id');
     }
 }

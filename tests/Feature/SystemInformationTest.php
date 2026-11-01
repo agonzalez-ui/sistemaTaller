@@ -10,12 +10,19 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->seed(SimrhSeeder::class);
 });
-test('all assigned roles can view system information and relevant help', function () {
+test('all assigned roles can view workshop information and relevant help', function () {
     foreach ([1, 2, 3, 4] as $role) {
         $user = User::factory()->create();
         $user->forceFill(['role_id' => $role])->save();
         $this->actingAs($user);
-        $this->get(route('about'))->assertSuccessful()->assertSee('Manuel Rodriguez')->assertSee('Desarrollador')->assertSee('PHP')->assertSee('MySQL')->assertSee('0.1.0');
+        $this->get(route('about'))
+            ->assertSuccessful()
+            ->assertSee('Acerca del taller')
+            ->assertSee('Manuel Rodriguez')
+            ->assertSee('Servicios del taller')
+            ->assertSee('Confianza en cada reparación')
+            ->assertDontSee('Tecnología utilizada')
+            ->assertDontSee('Desarrollador');
         $this->get(route('help'))->assertSuccessful()->assertSee('Repuestos y existencias');
         $this->get(route('dashboard'))->assertSee('Información del sistema')->assertSee(route('about'))->assertSee(route('help'));
     }

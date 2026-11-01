@@ -9,7 +9,9 @@ class SaveOrderItemRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasModulePermission('orders', 'edit') ?? false;
+        $order = $this->route('order');
+
+        return $order && ($this->user()?->canEditOrder($order) ?? false);
     }
 
     public function rules(): array

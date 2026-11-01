@@ -4,6 +4,7 @@ use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderHistory;
+use App\Models\OrderIntakePhoto;
 use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use App\Models\SparePart;
@@ -13,6 +14,8 @@ use App\Models\VehicleBrand;
 use App\Models\VehicleType;
 use Database\Seeders\SimrhSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -45,6 +48,80 @@ test('creates a numbered order linked to its owner motorcycle and mechanic', fun
     expect($order->number)->toBe('OT-2026-000001')->and($order->created_by)->toBe($this->admin->id)->and($order->customer_id)->toBe($this->customer->id)->and($order->vehicle_id)->toBe($this->vehicle->id);
     expect(OrderHistory::count())->toBe(1)->and($order->histories()->first()->notes)->toContain('recibida');
     $this->get(route('orders.show', $order))->assertSuccessful()->assertSee($order->number)->assertSee('Ruido en el motor');
+});
+
+test('records the motorcycle intake inspection and stores private photographic evidence', function () {
+    Storage::fake('local');
+    $photo = UploadedFile::fake()->create('costado-derecho.jpg', 250, 'image/jpeg');
+
+    $this->post(route('orders.store'), [
+        ...$this->orderData,
+        'odometer' => 24500,
+        'fuel_level' => 'half',
+        'intake_condition' => 'Rayón en el costado derecho y golpe leve en el tanque.',
+        'intake_accessories' => ['ignition_key', 'helmet'],
+        'intake_photos' => [$photo],
+    ])->assertSessionHasNoErrors();
+
+    $order = Order::firstOrFail();
+    $evidence = OrderIntakePhoto::firstOrFail();
+
+    expect($order->odometer)->toBe(24500)
+        ->and($order->fuel_level)->toBe('half')
+        ->and($order->intake_condition)->toContain('Rayón')
+        ->and($order->intake_accessories)->toBe(['ignition_key', 'helmet'])
+        ->and($evidence->uploaded_by)->toBe($this->admin->id)
+        ->and($evidence->original_name)->toBe('costado-derecho.jpg');
+
+    Storage::disk('local')->assertExists($evidence->path);
+    $this->get(route('orders.show', $order))
+        ->assertSuccessful()
+        ->assertSee('Inspección de recepción')
+        ->assertSee('Rayón en el costado derecho')
+        ->assertSee('24.500 km');
+    $this->get(route('orders.intake-photos.show', [$order, $evidence]))
+        ->assertSuccessful()
+        ->assertHeader('content-type', 'image/jpeg');
+});
+
+test('protects validates and removes intake photographs', function () {
+    Storage::fake('local');
+    $tooManyPhotos = collect(range(1, 6))
+        ->map(fn (int $number) => UploadedFile::fake()->create("photo-$number.jpg", 100, 'image/jpeg'))
+        ->all();
+
+    $this->post(route('orders.store'), [
+        ...$this->orderData,
+        'intake_photos' => $tooManyPhotos,
+    ])->assertSessionHasErrors('intake_photos');
+    expect(Order::count())->toBe(0)->and(OrderIntakePhoto::count())->toBe(0);
+
+    $this->post(route('orders.store'), [
+        ...$this->orderData,
+        'intake_photos' => [UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf')],
+    ])->assertSessionHasErrors('intake_photos.0');
+
+    $this->post(route('orders.store'), [
+        ...$this->orderData,
+        'intake_photos' => [UploadedFile::fake()->create('frontal.jpg', 100, 'image/jpeg')],
+    ])->assertSessionHasNoErrors();
+    $order = Order::firstOrFail();
+    $photo = OrderIntakePhoto::firstOrFail();
+    $storedPath = $photo->path;
+
+    $otherOrder = Order::create([
+        ...$this->orderData,
+        'number' => 'OT-2026-999999',
+        'created_by' => $this->admin->id,
+    ]);
+    $this->get(route('orders.intake-photos.show', [$otherOrder, $photo]))->assertNotFound();
+    $this->delete(route('orders.intake-photos.destroy', [$otherOrder, $photo]))->assertNotFound();
+
+    $this->delete(route('orders.intake-photos.destroy', [$order, $photo]))
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success');
+    Storage::disk('local')->assertMissing($storedPath);
+    $this->assertDatabaseMissing('order_intake_photos', ['id' => $photo->id]);
 });
 
 test('validates motorcycle ownership active mechanic and initial status', function () {
@@ -144,4 +221,45 @@ test('search filters and permissions are enforced', function () {
     $this->put(route('orders.update', $order), $this->orderData)->assertForbidden();
     $this->post(route('orders.items.store', $order), ['spare_part_id' => $this->part->id, 'quantity' => 1])->assertForbidden();
     $this->delete(route('orders.destroy', $order))->assertForbidden();
+});
+
+test('mechanics only see and modify their assigned orders', function () {
+    $assignedOrder = createTestOrder($this);
+    $otherMechanic = User::factory()->create(['name' => 'Otro Mecánico']);
+    $otherMechanic->forceFill(['role_id' => 2])->save();
+    $otherOrder = Order::create([
+        ...$this->orderData,
+        'number' => 'OT-2026-999998',
+        'mechanic_id' => $otherMechanic->id,
+        'created_by' => $this->admin->id,
+    ]);
+
+    $this->actingAs($this->mechanic);
+    $this->get(route('dashboard'))
+        ->assertSuccessful()
+        ->assertSee('Mi trabajo del taller')
+        ->assertSee($assignedOrder->number)
+        ->assertDontSee($otherOrder->number);
+    $this->get(route('orders.index'))
+        ->assertSuccessful()
+        ->assertSee($assignedOrder->number)
+        ->assertDontSee($otherOrder->number)
+        ->assertDontSee('+ Nueva orden');
+    $this->get(route('orders.show', $assignedOrder))->assertSuccessful();
+    $this->get(route('orders.show', $otherOrder))->assertForbidden();
+    $this->get(route('orders.edit', $otherOrder))->assertForbidden();
+    $this->get(route('orders.create'))->assertForbidden();
+
+    $this->put(route('orders.update', $assignedOrder), [
+        ...$this->orderData,
+        'mechanic_id' => $otherMechanic->id,
+        'diagnosis' => 'Diagnóstico registrado por el mecánico asignado.',
+    ])->assertSessionHasNoErrors();
+    expect($assignedOrder->fresh()->mechanic_id)->toBe($this->mechanic->id);
+
+    $this->put(route('orders.update', $otherOrder), $this->orderData)->assertForbidden();
+    $this->post(route('orders.items.store', $otherOrder), [
+        'spare_part_id' => $this->part->id,
+        'quantity' => 1,
+    ])->assertForbidden();
 });

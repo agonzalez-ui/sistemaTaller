@@ -27,6 +27,7 @@ class OrderItemController extends Controller
 
     public function destroy(Request $request, Order $order, OrderItem $orderItem, OrderService $service): RedirectResponse
     {
+        abort_unless($request->user()->canEditOrder($order), 403);
         $service->removeItem($request, $order, $orderItem);
 
         return redirect()->route('orders.show', $order)->with('success', 'Repuesto retirado y existencia devuelta.');

@@ -3,11 +3,26 @@
 @section('title', 'Panel del taller')
 
 @section('page-heading')
+    @php
+        $roleName = auth()->user()->role?->name;
+        $heading = match ($roleName) {
+            'Mecánico' => 'Mi trabajo del taller',
+            'Recepción y ventas' => 'Recepción del taller',
+            'Auditoría' => 'Consulta y seguimiento',
+            default => 'Panel del taller',
+        };
+        $headingDescription = match ($roleName) {
+            'Mecánico' => 'Revise las órdenes que tiene asignadas y continúe el trabajo pendiente.',
+            'Recepción y ventas' => 'Registre clientes, motos y órdenes desde un solo lugar.',
+            'Auditoría' => 'Consulte la operación y los reportes sin modificar información.',
+            default => 'Supervise clientes, órdenes, inventario y operación del taller.',
+        };
+    @endphp
     <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
         <div>
-            <p class="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700">Administración SIMRH</p>
-            <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Panel del taller</h1>
-            <p class="mt-2 text-sm leading-6 text-slate-500">Clientes, motos y trabajo del taller en un solo lugar.</p>
+            <p class="mb-2 text-xs font-bold uppercase tracking-widest text-amber-700">{{ $roleName ?: 'SIMRH' }}</p>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{{ $heading }}</h1>
+            <p class="mt-2 text-sm leading-6 text-slate-500">{{ $headingDescription }}</p>
         </div>
         @can('module-access', ['customers', 'create'])
         <a href="{{ route('customers.create') }}" class="inline-flex min-h-12 items-center justify-center gap-2 self-start rounded-xl bg-amber-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
@@ -27,6 +42,32 @@
             Su cuenta está pendiente de asignación de rol. El administrador debe asignarle un rol para acceder a los módulos del taller.
         </div>
     @endif
+    @can('module-access', ['orders', 'view'])
+        <section class="mt-6" aria-labelledby="assigned-orders-title">
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs font-bold uppercase tracking-wider text-slate-500">{{ auth()->user()->isMechanic() ? 'Mis órdenes activas' : 'Órdenes activas' }}</p><p class="mt-2 text-3xl font-bold text-slate-900">{{ $dashboardStats['active'] }}</p></div>
+                <div class="rounded-xl border border-amber-200 bg-amber-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-amber-700">Esperando repuesto</p><p class="mt-2 text-3xl font-bold text-slate-900">{{ $dashboardStats['waiting'] }}</p></div>
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-emerald-700">Listas para entregar</p><p class="mt-2 text-3xl font-bold text-slate-900">{{ $dashboardStats['ready'] }}</p></div>
+            </div>
+            <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div><h2 id="assigned-orders-title" class="text-xl font-bold text-slate-900">{{ auth()->user()->isMechanic() ? 'Mis próximas órdenes' : 'Órdenes que requieren atención' }}</h2><p class="mt-1 text-sm text-slate-500">Se muestran primero las que llevan más tiempo abiertas.</p></div>
+                    <a href="{{ route('orders.index') }}" class="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white">Ver todas →</a>
+                </div>
+                <div class="mt-5 grid gap-3 lg:grid-cols-2">
+                    @forelse($dashboardOrders as $order)
+                        <a href="{{ route('orders.show', $order) }}" class="flex min-h-20 items-center gap-4 rounded-xl border border-slate-200 p-4 transition hover:border-amber-400 hover:bg-amber-50/40">
+                            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800"><x-module-icon name="orders" class="h-6 w-6" /></span>
+                            <span class="min-w-0 flex-1"><span class="block font-mono text-xs text-slate-500">{{ $order->number }}</span><span class="mt-1 block truncate font-bold text-slate-900">{{ $order->vehicle->license_plate }} · {{ $order->customer->name }}</span><span class="mt-1 block text-xs text-slate-500">{{ $order->status->name }}@unless(auth()->user()->isMechanic()) · {{ $order->mechanic?->name ?? 'Sin asignar' }}@endunless</span></span>
+                            <span aria-hidden="true">→</span>
+                        </a>
+                    @empty
+                        <p class="rounded-xl bg-slate-50 p-5 text-sm text-slate-600 lg:col-span-2">{{ auth()->user()->isMechanic() ? 'No tiene órdenes pendientes asignadas.' : 'No hay órdenes pendientes en este momento.' }}</p>
+                    @endforelse
+                </div>
+            </div>
+        </section>
+    @endcan
     @can('module-access', ['inventory', 'view'])
         @if ($lowStockParts->isNotEmpty())
             <section class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6" aria-labelledby="inventory-alert-title">
@@ -83,7 +124,9 @@
                 ];
             @endphp
             @foreach ($modules as [$label, $route, $icon, $description])
-                @php($modulePermission = ['customers.index' => 'customers', 'vehicles.index' => 'vehicles', 'spareparts.index' => 'inventory', 'invoices.index' => 'billing'][$route])
+                @php
+                    $modulePermission = ['customers.index' => 'customers', 'vehicles.index' => 'vehicles', 'spareparts.index' => 'inventory', 'invoices.index' => 'billing'][$route];
+                @endphp
                 @can('module-access', [$modulePermission, 'view'])
                 <a href="{{ route($route) }}" class="group flex min-h-44 flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-amber-400 hover:bg-amber-50/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:p-6">
                     <div class="flex items-center justify-between gap-3">

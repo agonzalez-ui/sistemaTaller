@@ -44,7 +44,7 @@ class SimrhSeeder extends Seeder
         // [ver, crear, editar, eliminar] por modulo, para cada rol.
         $matrix = [
             1 => ['roles' => [1, 1, 1, 1], 'users' => [1, 1, 1, 1], 'admin_users' => [1, 1, 1, 1], 'customers' => [1, 1, 1, 1], 'vehicles' => [1, 1, 1, 1], 'orders' => [1, 1, 1, 1], 'inventory' => [1, 1, 1, 1], 'billing' => [1, 1, 1, 1], 'reports' => [1, 0, 0, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
-            2 => ['customers' => [1, 1, 0, 0], 'vehicles' => [1, 1, 1, 0], 'orders' => [1, 1, 1, 0], 'inventory' => [1, 0, 1, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
+            2 => ['customers' => [1, 1, 0, 0], 'vehicles' => [1, 1, 1, 0], 'orders' => [1, 0, 1, 0], 'inventory' => [1, 0, 1, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
             3 => ['customers' => [1, 1, 1, 0], 'vehicles' => [1, 1, 1, 0], 'orders' => [1, 1, 1, 0], 'billing' => [1, 1, 1, 0], 'inventory' => [1, 0, 0, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
             4 => ['customers' => [1, 0, 0, 0], 'vehicles' => [1, 0, 0, 0], 'orders' => [1, 0, 0, 0], 'inventory' => [1, 0, 0, 0], 'billing' => [1, 0, 0, 0], 'reports' => [1, 0, 0, 0], 'about' => [1, 0, 0, 0], 'help' => [1, 0, 0, 0]],
         ];

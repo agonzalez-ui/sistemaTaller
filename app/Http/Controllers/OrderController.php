@@ -25,6 +25,7 @@ class OrderController extends Controller
             'to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('from') ? ['after_or_equal:from'] : [])],
         ]);
         $orders = Order::with(['customer', 'vehicle.brand', 'status', 'mechanic'])->withSum('items', 'line_total')
+            ->when($request->user()->isMechanic(), fn (Builder $query) => $query->where('mechanic_id', $request->user()->id))
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where(fn (Builder $query) => $query
                 ->where('number', 'like', "%$search%")->orWhereHas('customer', fn (Builder $query) => $query->where('name', 'like', "%$search%"))
                 ->orWhereHas('vehicle', fn (Builder $query) => $query->where('license_plate', 'like', "%$search%"))))
@@ -51,7 +52,8 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load(['customer.phones', 'vehicle.brand', 'status', 'mechanic', 'creator', 'items.sparePart.brand', 'histories.status', 'histories.user', 'invoices']);
+        abort_unless(request()->user()->canViewOrder($order), 403);
+        $order->load(['customer.phones', 'vehicle.brand', 'status', 'mechanic', 'creator', 'items.sparePart.brand', 'histories.status', 'histories.user', 'invoices', 'intakePhotos.uploader']);
         $partsTotal = (float) $order->items->sum('line_total');
 
         return view('orders.show', ['order' => $order, 'parts' => SparePart::with('brand')->where('active', true)->where('stock_quantity', '>', 0)->orderBy('name')->get(), 'partsTotal' => $partsTotal, 'total' => $partsTotal + (float) $order->labor_cost]);
@@ -59,6 +61,7 @@ class OrderController extends Controller
 
     public function edit(Order $order): View
     {
+        abort_unless(request()->user()->canEditOrder($order), 403);
         abort_if($order->status?->is_final || $order->invoices()->exists(), 409, 'La orden ya no puede modificarse.');
 
         return view('orders.edit', ['order' => $order, ...$this->formData($order)]);
@@ -73,6 +76,7 @@ class OrderController extends Controller
 
     public function destroy(Request $request, Order $order, OrderService $service): RedirectResponse
     {
+        abort_unless($request->user()->canEditOrder($order), 403);
         $service->cancel($request, $order);
 
         return redirect()->route('orders.show', $order)->with('success', 'Orden cancelada y repuestos devueltos al inventario.');
@@ -80,6 +84,7 @@ class OrderController extends Controller
 
     public function deliver(Request $request, Order $order, OrderService $service): RedirectResponse
     {
+        abort_unless($request->user()->canEditOrder($order), 403);
         $service->deliver($request, $order);
 
         return redirect()->route('orders.show', $order)->with('success', 'Entrega registrada correctamente. La orden quedó finalizada.');

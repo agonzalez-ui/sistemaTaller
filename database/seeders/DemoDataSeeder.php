@@ -63,15 +63,11 @@ class DemoDataSeeder extends Seeder
     private function customers(User $admin)
     {
         $names = [
-            'Alejandro Vargas Mora', 'Andrea Solano Rojas', 'Bernardo Arias Castro', 'Camila Jimenez Soto',
-            'Carlos Mendez Quesada', 'Daniela Chaves Leon', 'David Cordero Ruiz', 'Elena Salazar Vega',
-            'Esteban Brenes Alfaro', 'Fernanda Mora Ureña', 'Gabriel Rojas Araya', 'Gabriela Castro Solis',
-            'Hector Vargas Lopez', 'Irene Quesada Mora', 'Javier Solano Diaz', 'Jessica Araya Rojas',
-            'Jorge Villalobos Soto', 'Jose Pablo Mena Ruiz', 'Karla Sanchez Vega', 'Laura Hernandez Mora',
-            'Luis Fernando Castro', 'Marcela Rojas Arias', 'Marco Chaves Solano', 'Maria Fernanda Soto',
-            'Mariana Vargas Leon', 'Mauricio Brenes Mora', 'Natalia Cordero Rojas', 'Oscar Mendez Araya',
-            'Paola Jimenez Vega', 'Pablo Salazar Solis', 'Ricardo Quesada Ruiz', 'Rocio Mora Castro',
-            'Sebastian Arias Soto', 'Sofia Villalobos Rojas', 'Valeria Chaves Mora', 'Victor Hernandez Vega',
+            'Alejandro Vargas Mora',
+            'Andrea Solano Rojas',
+            'Bernardo Arias Castro',
+            'Camila Jimenez Soto',
+            'Carlos Mendez Quesada',
         ];
         $locations = ['San José', 'Heredia', 'Alajuela', 'Cartago', 'Desamparados', 'Curridabat', 'Escazú', 'Goicoechea'];
 
@@ -80,7 +76,7 @@ class DemoDataSeeder extends Seeder
             $customer = Customer::firstOrCreate(['identification_number' => $number], [
                 'name' => $name, 'email' => 'cliente'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'@simrh.test',
                 'address' => ($index % 4 + 1).'00 metros '.($index % 2 ? 'norte' : 'este').' del centro de '.$locations[$index % count($locations)],
-                'active' => $index % 17 !== 0, 'created_by' => $admin->id,
+                'active' => true, 'created_by' => $admin->id,
             ]);
             $customer->phones()->firstOrCreate(['phone' => (string) (70000000 + $index * 137)], ['type' => $index % 3 === 0 ? 'Trabajo' : 'Celular']);
 
@@ -100,7 +96,7 @@ class DemoDataSeeder extends Seeder
         $type = VehicleType::where('name', 'Motocicleta')->firstOrFail();
         $colors = ['Negro', 'Rojo', 'Azul', 'Blanco', 'Gris', 'Naranja'];
 
-        return collect(range(1, 48))->map(function (int $position) use ($admin, $customers, $models, $brands, $type, $colors) {
+        return collect(range(1, 5))->map(function (int $position) use ($admin, $customers, $models, $brands, $type, $colors) {
             $brandName = array_keys($models)[($position - 1) % count($models)];
             $brandModels = $models[$brandName];
 
@@ -108,7 +104,7 @@ class DemoDataSeeder extends Seeder
                 'customer_id' => $customers[($position - 1) % $customers->count()]->id,
                 'vehicle_brand_id' => $brands[$brandName]->id, 'vehicle_type_id' => $type->id,
                 'model' => $brandModels[($position - 1) % count($brandModels)], 'year' => 2015 + ($position % 11),
-                'color' => $colors[$position % count($colors)], 'active' => $position % 19 !== 0, 'created_by' => $admin->id,
+                'color' => $colors[$position % count($colors)], 'active' => true, 'created_by' => $admin->id,
             ]);
         });
     }
@@ -129,14 +125,14 @@ class DemoDataSeeder extends Seeder
         ];
         $brands = SparePartBrand::orderBy('id')->get();
 
-        return collect($catalog)->map(function (array $item, int $index) use ($admin, $brands) {
+        return collect($catalog)->take(12)->map(function (array $item, int $index) use ($admin, $brands) {
             $part = SparePart::firstOrCreate(['code' => 'DEMO-'.str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT)], [
                 'name' => $item[0], 'description' => 'Repuesto de demostración para motocicletas de uso frecuente.',
                 'spare_part_brand_id' => $brands[$index % $brands->count()]->id, 'price' => $item[1],
-                'stock_quantity' => 60, 'minimum_quantity' => 5 + ($index % 4), 'active' => $index !== 28, 'created_by' => $admin->id,
+                'stock_quantity' => 20, 'minimum_quantity' => 3 + ($index % 3), 'active' => true, 'created_by' => $admin->id,
             ]);
             if (! InventoryMovement::where('request_token', 'demo-initial-'.$part->id)->exists()) {
-                InventoryMovement::create(['spare_part_id' => $part->id, 'request_token' => 'demo-initial-'.$part->id, 'type' => 'IN', 'quantity' => 60, 'previous_balance' => 0, 'new_balance' => 60, 'user_id' => $admin->id, 'date' => now()->subDays(150), 'notes' => 'Inventario inicial de demostración.']);
+                InventoryMovement::create(['spare_part_id' => $part->id, 'request_token' => 'demo-initial-'.$part->id, 'type' => 'IN', 'quantity' => 20, 'previous_balance' => 0, 'new_balance' => 20, 'user_id' => $admin->id, 'date' => now()->subDays(30), 'notes' => 'Inventario inicial para la presentación.']);
             }
 
             return $part;
@@ -145,20 +141,25 @@ class DemoDataSeeder extends Seeder
 
     private function ordersAndInvoices(User $admin, User $mechanic, User $seller, $customers, $vehicles, $parts): void
     {
-        $statuses = OrderStatus::orderBy('sort_order')->get();
+        $statusNames = ['Recibido', 'En diagnóstico', 'En reparación', 'Listo'];
+        $statuses = OrderStatus::whereIn('name', $statusNames)->get()->keyBy('name');
         $jobs = ['Cambio de aceite y revisión general', 'Diagnóstico de ruido en motor', 'Cambio de pastillas de freno', 'Ajuste de cadena y lubricación', 'Revisión del sistema eléctrico', 'Mantenimiento preventivo completo', 'Cambio de llanta y balanceo', 'Limpieza de carburador e inyección'];
         $balances = $parts->mapWithKeys(fn (SparePart $part) => [$part->id => (int) $part->fresh()->stock_quantity]);
 
-        foreach (range(1, 60) as $position) {
+        foreach (range(1, 4) as $position) {
             $number = 'OT-D-'.str_pad((string) $position, 4, '0', STR_PAD_LEFT);
             $vehicle = $vehicles[($position - 1) % $vehicles->count()];
             $customer = $customers->firstWhere('id', $vehicle->customer_id);
-            $status = $statuses[($position - 1) % $statuses->count()];
-            $received = Carbon::now()->subDays(120 - $position)->setTime(8 + ($position % 8), ($position * 7) % 60);
+            $status = $statuses[$statusNames[$position - 1]];
+            $received = Carbon::now()->subDays(12 - ($position * 2))->setTime(8 + $position, ($position * 7) % 60);
             $order = Order::firstOrCreate(['number' => $number], [
                 'customer_id' => $customer->id, 'vehicle_id' => $vehicle->id, 'order_status_id' => $status->id,
                 'mechanic_id' => $position % 8 === 0 ? null : $mechanic->id, 'description' => $jobs[$position % count($jobs)],
-                'diagnosis' => $position % 4 === 0 ? null : 'Se revisó la motocicleta y se identificó desgaste normal de los componentes indicados.',
+                'diagnosis' => $position === 1 ? null : 'Se revisó la motocicleta y se identificó desgaste normal de los componentes indicados.',
+                'odometer' => 12500 + ($position * 3270),
+                'fuel_level' => ['quarter', 'half', 'three_quarters', 'full'][$position - 1],
+                'intake_condition' => $position === 2 ? 'Rayón superficial en el costado derecho; se recibe con una llave y casco.' : 'Sin golpes visibles; presenta marcas normales de uso.',
+                'intake_accessories' => $position === 2 ? ['ignition_key', 'helmet'] : ['ignition_key'],
                 'labor_cost' => 10000 + ($position % 6) * 3500, 'received_at' => $received,
                 'delivered_at' => $status->is_final ? $received->copy()->addDays(2) : null, 'created_by' => $seller->id,
             ]);
@@ -182,7 +183,7 @@ class DemoDataSeeder extends Seeder
 
         foreach ($parts as $index => $part) {
             $current = $balances[$part->id];
-            if ($index < 7) {
+            if ($index < 2) {
                 $target = $index;
                 InventoryMovement::firstOrCreate(['request_token' => 'demo-adjust-'.$part->id], ['spare_part_id' => $part->id, 'type' => 'ADJUST', 'quantity' => $target, 'previous_balance' => $current, 'new_balance' => $target, 'user_id' => $admin->id, 'date' => now()->subDay(), 'notes' => 'Conteo físico de demostración para probar alertas de stock.']);
                 $current = $target;
@@ -208,12 +209,12 @@ class DemoDataSeeder extends Seeder
     private function securityLogs(User $admin, User $mechanic, User $seller): void
     {
         $users = [$admin, $mechanic, $seller];
-        foreach (range(1, 45) as $position) {
+        foreach (range(1, 8) as $position) {
             AccessLog::firstOrCreate(['ip_address' => '10.0.0.'.(20 + $position), 'logged_in_at' => Carbon::now()->subDays(46 - $position)->setTime(7 + ($position % 4), 15)], ['user_id' => $users[$position % 3]->id, 'logged_out_at' => Carbon::now()->subDays(46 - $position)->setTime(16 + ($position % 3), 30), 'logout_type' => $position % 9 === 0 ? 'TIMEOUT' : 'MANUAL']);
         }
         $actions = ['INSERT', 'UPDATE', 'DELETE', 'CANCEL'];
         $tables = ['customers', 'vehicles', 'spare_parts', 'orders', 'invoices'];
-        foreach (range(1, 90) as $position) {
+        foreach (range(1, 15) as $position) {
             ActivityLog::firstOrCreate(['record_id' => 'DEMO-'.$position, 'table_name' => $tables[$position % count($tables)]], ['user_id' => $users[$position % 3]->id, 'occurred_at' => Carbon::now()->subDays(91 - $position)->setTime(8 + ($position % 9), ($position * 11) % 60), 'action' => $actions[$position % count($actions)], 'details' => 'Movimiento demostrativo #'.$position.' para validar filtros y paginación.', 'ip_address' => '10.0.1.'.(20 + $position)]);
         }
     }

@@ -13,7 +13,30 @@ class SaveOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasModulePermission('orders', $this->route('order') ? 'edit' : 'create') ?? false;
+        $order = $this->route('order');
+
+        return $order
+            ? ($this->user()?->canEditOrder($order) ?? false)
+            : ($this->user()?->hasModulePermission('orders', 'create') ?? false);
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $order = $this->route('order');
+        if ($order && $this->user()?->isMechanic()) {
+            $this->merge([
+                'customer_id' => $order->customer_id,
+                'vehicle_id' => $order->vehicle_id,
+                'mechanic_id' => $order->mechanic_id,
+                'description' => $order->description,
+                'odometer' => $order->odometer,
+                'fuel_level' => $order->fuel_level,
+                'intake_condition' => $order->intake_condition,
+                'intake_accessories' => $order->intake_accessories ?? [],
+                'labor_cost' => $order->labor_cost,
+                'received_at' => $order->received_at?->format('Y-m-d H:i:s'),
+            ]);
+        }
     }
 
     public function rules(): array
@@ -25,6 +48,13 @@ class SaveOrderRequest extends FormRequest
             'mechanic_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('active', true))],
             'description' => ['required', 'string', 'max:500'],
             'diagnosis' => ['nullable', 'string', 'max:500'],
+            'odometer' => ['nullable', 'integer', 'min:0', 'max:9999999'],
+            'fuel_level' => ['nullable', Rule::in(['empty', 'quarter', 'half', 'three_quarters', 'full'])],
+            'intake_condition' => ['nullable', 'string', 'max:2000'],
+            'intake_accessories' => ['nullable', 'array'],
+            'intake_accessories.*' => ['string', Rule::in(['ignition_key', 'spare_key', 'helmet', 'documents', 'top_case', 'tools', 'other'])],
+            'intake_photos' => ['nullable', 'array', 'max:5'],
+            'intake_photos.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'labor_cost' => ['required', 'numeric', 'min:0', 'max:9999999999.99', 'decimal:0,2'],
             'received_at' => ['required', 'date'],
             'status_notes' => ['nullable', 'string', 'max:250'],
@@ -65,11 +95,18 @@ class SaveOrderRequest extends FormRequest
                     $validator->errors()->add('diagnosis', 'Registre el diagnóstico y trabajo realizado antes de finalizar la orden.');
                 }
             }
+            $existingPhotos = $order?->intakePhotos()->count() ?? 0;
+            if ($order && $this->user()?->isMechanic() && count($this->file('intake_photos', [])) > 0) {
+                $validator->errors()->add('intake_photos', 'Las fotografías de recepción solo puede administrarlas recepción o administración.');
+            }
+            if ($existingPhotos + count($this->file('intake_photos', [])) > 5) {
+                $validator->errors()->add('intake_photos', 'La orden puede conservar un máximo de cinco fotografías de recepción.');
+            }
         }];
     }
 
     public function attributes(): array
     {
-        return ['customer_id' => 'cliente', 'vehicle_id' => 'moto', 'order_status_id' => 'estado', 'mechanic_id' => 'mecánico', 'description' => 'trabajo solicitado', 'diagnosis' => 'diagnóstico', 'labor_cost' => 'mano de obra', 'received_at' => 'fecha de recepción', 'status_notes' => 'detalle del cambio'];
+        return ['customer_id' => 'cliente', 'vehicle_id' => 'moto', 'order_status_id' => 'estado', 'mechanic_id' => 'mecánico', 'description' => 'trabajo solicitado', 'diagnosis' => 'diagnóstico', 'odometer' => 'kilometraje', 'fuel_level' => 'nivel de combustible', 'intake_condition' => 'condición de ingreso', 'intake_accessories' => 'accesorios recibidos', 'intake_photos' => 'fotografías de recepción', 'labor_cost' => 'mano de obra', 'received_at' => 'fecha de recepción', 'status_notes' => 'detalle del cambio'];
     }
 }

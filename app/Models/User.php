@@ -58,6 +58,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->active && $this->role?->active && $this->role?->is_administrator;
     }
 
+    public function isMechanic(): bool
+    {
+        return $this->active && $this->role?->active && $this->role?->name === 'Mecánico';
+    }
+
+    public function canViewOrder(Order $order): bool
+    {
+        return $this->hasModulePermission('orders', 'view')
+            && (! $this->isMechanic() || $order->mechanic_id === $this->id);
+    }
+
+    public function canEditOrder(Order $order): bool
+    {
+        return $this->hasModulePermission('orders', 'edit')
+            && (! $this->isMechanic() || $order->mechanic_id === $this->id);
+    }
+
     public function hasModulePermission(string $slug, string $action = 'view'): bool
     {
         if (! $this->active || ! $this->role?->active || ! in_array($action, ['view', 'create', 'edit', 'delete'], true)) {

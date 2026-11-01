@@ -5,25 +5,32 @@ namespace App\Services;
 use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderHistory;
+use App\Models\OrderIntakePhoto;
 use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use App\Models\SparePart;
 use App\Support\SecurityAudit;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class OrderService
 {
     public function create(Request $request, array $data): Order
     {
         return DB::transaction(function () use ($request, $data) {
-            unset($data['status_notes']);
+            $photos = $data['intake_photos'] ?? [];
+            unset($data['status_notes'], $data['intake_photos']);
+            $data['intake_accessories'] = $data['intake_accessories'] ?? [];
             $order = Order::create([...$data, 'number' => 'TMP-'.Str::random(16), 'created_by' => $request->user()->id]);
             $order->update(['number' => sprintf('OT-%s-%06d', $order->received_at->format('Y'), $order->id)]);
             $this->history($request, $order, 'Orden recibida y registrada en el sistema.');
             SecurityAudit::record($request, 'INSERT', 'orders', $order->id, 'Orden creada: '.$order->number.'.');
+            $this->storeIntakePhotos($request, $order, $photos);
 
             return $order;
         });
@@ -36,7 +43,9 @@ class OrderService
             $this->assertEditable($locked);
             $oldStatus = $locked->order_status_id;
             $notes = $data['status_notes'] ?? null;
-            unset($data['status_notes']);
+            $photos = $data['intake_photos'] ?? [];
+            unset($data['status_notes'], $data['intake_photos']);
+            $data['intake_accessories'] = $data['intake_accessories'] ?? [];
             $status = OrderStatus::findOrFail($data['order_status_id']);
             $data['delivered_at'] = $status->is_final ? now() : null;
             $locked->update($data);
@@ -44,6 +53,7 @@ class OrderService
                 $this->history($request, $locked, $notes);
             }
             SecurityAudit::record($request, 'UPDATE', 'orders', $locked->id, 'Orden actualizada: '.$locked->number.'.');
+            $this->storeIntakePhotos($request, $locked, $photos);
 
             return $locked;
         });
@@ -132,6 +142,38 @@ class OrderService
             $this->history($request, $locked, 'Moto entregada al cliente después de emitir la factura.');
             SecurityAudit::record($request, 'UPDATE', 'orders', $locked->id, 'Entrega registrada: '.$locked->number.'.');
         });
+    }
+
+    /** @param array<int, UploadedFile> $photos */
+    private function storeIntakePhotos(Request $request, Order $order, array $photos): void
+    {
+        foreach ($photos as $photo) {
+            $extension = strtolower($photo->extension() ?: $photo->getClientOriginalExtension());
+            $filename = (string) Str::uuid().'.'.$extension;
+            $path = $photo->storeAs('order-intake/'.$order->id, $filename, 'local');
+            if (! $path) {
+                throw new RuntimeException('No fue posible guardar una fotografía de recepción.');
+            }
+            OrderIntakePhoto::create([
+                'order_id' => $order->id,
+                'disk' => 'local',
+                'path' => $path,
+                'original_name' => mb_substr($photo->getClientOriginalName(), 0, 255),
+                'mime_type' => $photo->getMimeType() ?: 'application/octet-stream',
+                'size' => $photo->getSize(),
+                'uploaded_by' => $request->user()->id,
+            ]);
+        }
+    }
+
+    public function removeIntakePhoto(Request $request, Order $order, OrderIntakePhoto $photo): void
+    {
+        $this->assertEditable($order);
+        abort_unless($photo->order_id === $order->id, 404);
+        Storage::disk($photo->disk)->delete($photo->path);
+        $photoId = $photo->id;
+        $photo->delete();
+        SecurityAudit::record($request, 'DELETE', 'order_intake_photos', $photoId, 'Fotografía de recepción eliminada de '.$order->number.'.');
     }
 
     private function moveStock(Request $request, Order $order, SparePart $part, string $type, int $quantity, string $notes): void
