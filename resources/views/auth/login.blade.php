@@ -17,7 +17,7 @@
         <input 
             id="email" 
             type="email" 
-            placeholder="Email de Registro"
+            placeholder="Correo electrónico"
             class="w-full border border-gray-300 p-3 rounded-lg" 
             name="email" 
             required
@@ -36,7 +36,7 @@
         </div>
         <input 
             type="password" 
-            placeholder="Contraseña de Registro" 
+            placeholder="Ingrese su contraseña"
             class="w-full border border-gray-300 p-3 rounded-lg"
             name="password" 
             required
