@@ -21,7 +21,7 @@ class RoleController extends Controller
         $roles = Role::withCount('users')
             ->when($filters['search'] ?? null, fn ($query, $search) => $query->where(fn ($query) => $query->where('name', 'like', "%$search%")->orWhere('description', 'like', "%$search%")))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('active', $status === 'active'))
-            ->orderByDesc('is_administrator')->orderBy('name')->paginate(10)->withQueryString();
+            ->orderByDesc('is_administrator')->orderBy('name')->paginate(config('simrh.records_per_page', 6))->withQueryString();
 
         return view('roles.index', compact('roles'));
     }

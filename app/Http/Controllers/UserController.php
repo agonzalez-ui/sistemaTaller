@@ -29,7 +29,7 @@ class UserController extends Controller
             })
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('active', $status === 'active'))
             ->when($filters['role'] ?? null, fn ($query, $role) => $query->where('role_id', $role))
-            ->orderBy('name')->paginate(10)->withQueryString();
+            ->orderBy('name')->paginate(config('simrh.records_per_page', 6))->withQueryString();
 
         return view('users.index', ['users' => $users, 'roles' => Role::orderBy('name')->get()]);
     }

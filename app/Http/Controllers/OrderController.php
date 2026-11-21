@@ -33,7 +33,7 @@ class OrderController extends Controller
             ->when($filters['mechanic'] ?? null, fn (Builder $query, int $mechanic) => $query->where('mechanic_id', $mechanic))
             ->when($filters['from'] ?? null, fn (Builder $query, string $date) => $query->where('received_at', '>=', "$date 00:00:00"))
             ->when($filters['to'] ?? null, fn (Builder $query, string $date) => $query->where('received_at', '<=', "$date 23:59:59"))
-            ->orderByDesc('received_at')->orderByDesc('id')->paginate(12)->withQueryString();
+            ->orderByDesc('received_at')->orderByDesc('id')->paginate(config('simrh.records_per_page', 6))->withQueryString();
 
         return view('orders.index', ['orders' => $orders, ...$this->catalogs()]);
     }

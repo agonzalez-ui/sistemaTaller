@@ -21,7 +21,7 @@ class SparePartController extends Controller
             ->when($filters['status'] ?? null, fn ($q, $s) => $q->where('active', $s === 'active'))
             ->when($filters['brand'] ?? null, fn ($q, $id) => $q->where('spare_part_brand_id', $id))
             ->when($filters['stock'] ?? null, fn ($q, $s) => $s === 'empty' ? $q->where('stock_quantity', 0) : $q->whereColumn('stock_quantity', '<=', 'minimum_quantity'))
-            ->orderBy('name')->paginate(12)->withQueryString();
+            ->orderBy('name')->paginate(config('simrh.records_per_page', 6))->withQueryString();
         $summary = ['active' => SparePart::where('active', true)->count(), 'low' => SparePart::where('active', true)->whereColumn('stock_quantity', '<=', 'minimum_quantity')->count(), 'empty' => SparePart::where('active', true)->where('stock_quantity', 0)->count()];
 
         return view('spareparts.index', ['parts' => $parts, 'brands' => SparePartBrand::orderBy('name')->get(), 'summary' => $summary]);

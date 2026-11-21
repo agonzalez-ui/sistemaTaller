@@ -31,7 +31,7 @@ class InvoiceController extends Controller
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($filters['from'] ?? null, fn (Builder $query, string $date) => $query->where('date', '>=', "$date 00:00:00"))
             ->when($filters['to'] ?? null, fn (Builder $query, string $date) => $query->where('date', '<=', "$date 23:59:59"))
-            ->orderByDesc('date')->orderByDesc('id')->paginate(12)->withQueryString();
+            ->orderByDesc('date')->orderByDesc('id')->paginate(config('simrh.records_per_page', 6))->withQueryString();
 
         return view('invoices.index', compact('invoices'));
     }

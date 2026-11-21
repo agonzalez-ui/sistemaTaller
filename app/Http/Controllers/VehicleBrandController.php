@@ -15,7 +15,7 @@ class VehicleBrandController extends Controller
     public function index(Request $request): View
     {
         $filters = $request->validate(['search' => ['nullable', 'string', 'max:80'], 'status' => ['nullable', 'in:active,inactive']]);
-        $brands = VehicleBrand::withCount('vehicles')->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', "%$search%"))->when($filters['status'] ?? null, fn ($q, $status) => $q->where('active', $status === 'active'))->orderBy('name')->paginate(12)->withQueryString();
+        $brands = VehicleBrand::withCount('vehicles')->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', "%$search%"))->when($filters['status'] ?? null, fn ($q, $status) => $q->where('active', $status === 'active'))->orderBy('name')->paginate(config('simrh.records_per_page', 6))->withQueryString();
 
         return view('vehicle-brands.index', compact('brands'));
     }

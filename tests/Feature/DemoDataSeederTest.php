@@ -16,7 +16,7 @@ test('presentation data seeder creates a small coherent workshop scenario', func
 
     expect(User::count())->toBe(3)
         ->and(Customer::count())->toBe(5)
-        ->and(Vehicle::count())->toBe(5)
+        ->and(Vehicle::count())->toBe(8)
         ->and(SparePart::count())->toBe(12)
         ->and(Order::count())->toBe(4)
         ->and(Invoice::count())->toBe(1)

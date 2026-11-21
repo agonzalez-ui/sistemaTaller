@@ -10,4 +10,5 @@ return [
     'owner' => 'Manuel Rodriguez',
     'developer' => 'Por confirmar',
     'purpose' => 'Centralizar la información de clientes, motos y repuestos, y apoyar la operación del taller.',
+    'records_per_page' => 6,
 ];

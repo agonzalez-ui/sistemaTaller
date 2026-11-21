@@ -96,7 +96,7 @@ class DemoDataSeeder extends Seeder
         $type = VehicleType::where('name', 'Motocicleta')->firstOrFail();
         $colors = ['Negro', 'Rojo', 'Azul', 'Blanco', 'Gris', 'Naranja'];
 
-        return collect(range(1, 5))->map(function (int $position) use ($admin, $customers, $models, $brands, $type, $colors) {
+        return collect(range(1, 8))->map(function (int $position) use ($admin, $customers, $models, $brands, $type, $colors) {
             $brandName = array_keys($models)[($position - 1) % count($models)];
             $brandModels = $models[$brandName];
 

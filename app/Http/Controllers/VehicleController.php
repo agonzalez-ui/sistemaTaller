@@ -25,7 +25,7 @@ class VehicleController extends Controller
                 ->orWhereHas('customer', fn ($q) => $q->where('name', 'like', "%$search%"))
                 ->orWhereHas('brand', fn ($q) => $q->where('name', 'like', "%$search%"))))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('active', $status === 'active'))
-            ->orderBy('license_plate')->paginate(12)->withQueryString();
+            ->orderBy('license_plate')->paginate(config('simrh.records_per_page', 6))->withQueryString();
 
         return view('vehicles.index', compact('vehicles'));
     }

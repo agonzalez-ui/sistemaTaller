@@ -15,7 +15,7 @@ class SparePartBrandController extends Controller
     public function index(Request $request): View
     {
         $filters = $request->validate(['search' => ['nullable', 'string', 'max:80'], 'status' => ['nullable', 'in:active,inactive']]);
-        $brands = SparePartBrand::withCount('spareParts')->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', "%$search%"))->when($filters['status'] ?? null, fn ($q, $status) => $q->where('active', $status === 'active'))->orderBy('name')->paginate(12)->withQueryString();
+        $brands = SparePartBrand::withCount('spareParts')->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', "%$search%"))->when($filters['status'] ?? null, fn ($q, $status) => $q->where('active', $status === 'active'))->orderBy('name')->paginate(config('simrh.records_per_page', 6))->withQueryString();
 
         return view('spare-part-brands.index', compact('brands'));
     }

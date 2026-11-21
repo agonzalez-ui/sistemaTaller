@@ -29,7 +29,7 @@ class CustomerController extends Controller
                 ->orWhereHas('phones', fn (Builder $query) => $query->where('phone', 'like', "%$search%"))))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('active', $status === 'active'))
             ->orderBy('name')
-            ->paginate(10)->withQueryString();
+            ->paginate(config('simrh.records_per_page', 6))->withQueryString();
 
         return view('customers.index', compact('customers'));
     }
