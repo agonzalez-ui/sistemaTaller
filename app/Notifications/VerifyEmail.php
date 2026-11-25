@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
@@ -11,8 +10,6 @@ use Illuminate\Support\Facades\URL;
 class VerifyEmail extends Notification
 {
     use Queueable;
-
-    
 
     /**
      * Get the notification's delivery channels.
@@ -29,7 +26,7 @@ class VerifyEmail extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-            $verificationUrl = URL::temporarySignedRoute(
+        $verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(60),
             [
@@ -45,8 +42,6 @@ class VerifyEmail extends Notification
             ->action('Confirmar Cuenta', $verificationUrl)
             ->line('Si no creaste esta cuenta, puedes ignorar este mensaje.')
             ->salutation('Saludos, SIMRH');
-            
+
     }
-
-
 }
